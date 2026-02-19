@@ -389,8 +389,43 @@ const MOODS = {
   },
 };
 
+function isSleeping() {
+  const hour = new Date().getHours();
+  return hour >= 23 || hour < 6; // Sleeps 11pm–6am
+}
+
+const SLEEP_FRAMES = [
+  [
+    "        z z z",
+    "       z",
+    "     .------.",
+    "    / ‿  ‿  \\",
+    "   |  -  -   |",
+    "    \\  ___  /",
+    "     '------'",
+  ],
+  [
+    "          z z",
+    "        z",
+    "     .------.",
+    "    / ‿  ‿  \\",
+    "   |  -  -   |",
+    "    \\  ___  /",
+    "     '------'",
+  ],
+  [
+    "      z z z",
+    "       z",
+    "     .------.",
+    "    / ‿  ‿  \\",
+    "   |  -  -   |",
+    "    \\  ___  /",
+    "     '------'",
+  ],
+];
+
 function getMood(stats) {
-  const hoursSinceSync = (Date.now() - stats.fetchedAt) / (1000 * 60 * 60);
+  if (isSleeping()) return "cozy";
   if (stats.streak >= 7 && stats.prs >= 5) return "energized";
   if (stats.streak >= 3) return "happy";
   if (stats.commits >= 30) return "focused";
@@ -640,8 +675,9 @@ function getCreatureKey(stats) {
 function render(stats, frameIndex, ambientMsg) {
   const { columns: w, rows: h } = process.stdout;
   const stage = getStage(stats.points);
+  const sleeping = isSleeping();
   const creatureKey = getCreatureKey(stats);
-  const frames = CREATURES[creatureKey];
+  const frames = sleeping ? SLEEP_FRAMES : CREATURES[creatureKey];
   const frame = frames[frameIndex % frames.length];
   const progress = getProgressToNext(stats.points);
 
