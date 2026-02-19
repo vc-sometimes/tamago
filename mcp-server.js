@@ -162,6 +162,13 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+const ART_INDENT = "        "; // 8 spaces from left wall
+
+function trimArt(lines) {
+  const minIndent = Math.min(...lines.map(l => l.match(/^(\s*)/)[1].length));
+  return lines.map(l => ART_INDENT + l.slice(minIndent));
+}
+
 function getCreatureKey(stats, config) {
   const stage = getStage(stats.points).name;
   if (stage === "egg") return stage;
@@ -200,11 +207,14 @@ function handleGetPetScreen() {
     ? `\n  Lines: +${fs_.totalLinesAdded} / -${fs_.totalLinesDeleted}`
     : "";
 
-  const screen = `${stats.username}'s tamago
+  const indentedArt = trimArt(CREATURES[creatureKey]).join("\n");
 
-${art}
+  const screen = `  ${stats.username}'s tamago
+
+${indentedArt}
 
   *${mood}*
+
 
   Stage: ${stageLabel}  |  ${archetype.label}
   ${bar} ${next === "MAX" ? "MAX" : `${stats.points}/${next} XP`}
@@ -224,14 +234,14 @@ function handlePetThePet() {
   const stats = config.stats;
   const creatureKey = getCreatureKey(stats, config);
   const reaction = pick(REACTIONS);
-  const art = CREATURES[creatureKey].join("\n");
+  const indentedArt = trimArt(CREATURES[creatureKey]).join("\n");
 
   if (!config.interactions) config.interactions = {};
   config.interactions.lastPetted = Date.now();
   config.interactions.totalPets = (config.interactions.totalPets || 0) + 1;
   saveConfig(config);
 
-  return text(`${art}\n\n  ${reaction}\n\n  (petted ${config.interactions.totalPets} times total)`);
+  return text(`${indentedArt}\n\n  ${reaction}\n\n  (petted ${config.interactions.totalPets} times total)`);
 }
 
 function handleGetAdvice() {
