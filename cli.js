@@ -10,7 +10,7 @@ const { execSync } = require("child_process");
 
 const CONFIG_PATH = path.join(
   process.env.HOME || process.env.USERPROFILE,
-  ".commitchi.json"
+  ".tamago.json"
 );
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 const FRAME_INTERVAL = 800;
@@ -494,7 +494,7 @@ function githubRequest(path, token) {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "User-Agent": "commitchi-cli",
+          "User-Agent": "tamago-cli",
           Accept: "application/vnd.github+json",
         },
       },
@@ -691,7 +691,7 @@ function render(stats, frameIndex, ambientMsg) {
       lines.push(`${BOLD}${color}${BANNER[i]}${RESET}`);
     }
   } else {
-    lines.push(`${BOLD}${BRIGHT_CYAN}✿ commitchi ✿${RESET}`);
+    lines.push(`${BOLD}${BRIGHT_CYAN}✿ tamago ✿${RESET}`);
   }
   lines.push("");
 
@@ -1100,7 +1100,7 @@ function cmdStatus() {
   console.log("");
   console.log(art);
   console.log("");
-  console.log(`  ${BOLD}${stats.username}'s commitchi${RESET}`);
+  console.log(`  ${BOLD}${stats.username}'s tamago${RESET}`);
   console.log(`  Stage: ${stageName}  |  Archetype: ${archetype.label}`);
   console.log(`  Mood: ${moodInfo.label}`);
   console.log(`  Points: ${stats.points} (${progress}% to ${next})`);

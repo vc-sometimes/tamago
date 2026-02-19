@@ -1,6 +1,6 @@
-# commitchi
+# tamago
 
-An idle CLI pet that grows from your GitHub activity. Like a Tamagotchi in your terminal — always animated, always cozy, no negatives.
+An idle CLI pet that hatches and grows from your GitHub activity. Like a Tamagotchi in your terminal — always animated, always cozy, no negatives.
 
 ## Quick Start
 
@@ -17,6 +17,7 @@ node cli.js                 # Launch interactive pet viewer
 node cli.js status          # Quick stats snapshot
 node cli.js pet             # Give your pet some love
 node cli.js achievements    # View all milestones
+node cli.js badges          # View per-PR badges and fun stats
 node cli.js graduate        # Retire a Legendary pet, start new generation
 node cli.js lineage         # View history of graduated pets
 node cli.js reset           # Clear config and start over
@@ -70,6 +71,18 @@ Pet mood changes based on activity: Energized, Happy, Cozy, Focused, or Inspired
 
 14 milestones to unlock — commit counts, PR counts, streak lengths, and point thresholds.
 
+## Badges
+
+9 per-PR badges with bronze/silver/gold tiers, earned from individual PR stats:
+
+| Category  | Bronze          | Silver          | Gold              |
+|-----------|-----------------|-----------------|-------------------|
+| Commits   | 10+ commits     | 50+ commits     | 100+ commits      |
+| Reviews   | 3+ approvers    | 5+ approvers    | 10+ approvers     |
+| Languages | 3+ repo langs   | 5+ repo langs   | 8+ repo langs     |
+
+Run `node cli.js badges` to see your badge progress and fun stats (lines added/deleted, biggest PR, fastest merge, etc.).
+
 ## Generations
 
 When your pet reaches Legendary, run `graduate` to retire it and start a new generation. The new pet inherits 10% of the parent's points. View your lineage with `lineage`.
@@ -81,7 +94,7 @@ An MCP server is included for Claude Code integration. Add to `~/.claude/setting
 ```json
 {
   "mcpServers": {
-    "commitchi": {
+    "tamago": {
       "command": "node",
       "args": ["/path/to/gitpet/mcp-server.js"]
     }
@@ -89,7 +102,7 @@ An MCP server is included for Claude Code integration. Add to `~/.claude/setting
 }
 ```
 
-Tools: `get_pet_status`, `pet_the_pet`, `get_pet_advice`
+Tools: `get_tamago`, `pet_tamago`, `tamago_advice`, `tamago_achievements`, `tamago_badges`
 
 ## Controls
 
