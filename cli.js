@@ -26,6 +26,24 @@ const STAGES = [
   { name: "legendary", min: 4000, max: Infinity },
 ];
 
+// ── Archetype System ────────────────────────────────────────────────────────
+// Your coding style determines your pet's archetype, which affects appearance.
+// Archetypes: streaker (consistency), sprinter (volume), reviewer (PRs), explorer (variety)
+
+const ARCHETYPES = {
+  streaker: { label: "Steady Streaker", desc: "Consistent daily coder" },
+  sprinter: { label: "Hyperfocus Hacker", desc: "Intense burst coder" },
+  reviewer: { label: "PR Wizard", desc: "Merge machine" },
+  explorer: { label: "Zen Coder", desc: "Balanced and calm" },
+};
+
+function getArchetype(stats) {
+  if (stats.streak >= 7) return "streaker";
+  if (stats.commits >= 50) return "sprinter";
+  if (stats.prs >= 8) return "reviewer";
+  return "explorer";
+}
+
 const CREATURES = {
   egg: [
     [
@@ -93,50 +111,190 @@ const CREATURES = {
       "  (_|   |_)",
     ],
   ],
-  adult: [
+  // Adult forms vary by archetype
+  adult_streaker: [
     [
-      "     /\\_/\\",
+      "     /\\_/\\  🔥",
       "   =( °w° )=",
       "    )   ( //",
       "   (__ __)//",
       '   " " " "',
     ],
     [
-      "     /\\_/\\",
+      "     /\\_/\\  🔥",
       "   =( °‿° )=",
       "    )   ( //",
       "   (__ __)//",
       '   " " " "',
     ],
     [
-      "     /\\_/\\",
+      "     /\\_/\\  🔥",
       "   =( °w° )=",
       "    ) ~ ( //",
       "   (__ __)//",
       '   " " " "',
     ],
   ],
-  legendary: [
+  adult_sprinter: [
     [
-      "   ⭐ /\\_/\\ ⭐",
-      "   =(  ✦‿✦  )=",
-      " ~~  )     (  ~~",
-      "    (__   __)  ",
-      '    " " " "  ✨',
+      "     /\\_/\\  ⚡",
+      "   =( >w< )=",
+      "    )   ( //",
+      "   (__ __)//",
+      '   " " " "',
     ],
     [
-      "   ✨ /\\_/\\ ✨",
-      "   =(  ✦w✦  )=",
-      " ~~  )     (  ~~",
-      "    (__   __)  ",
-      '    " " " "  ⭐',
+      "     /\\_/\\  ⚡",
+      "   =( >‿< )=",
+      "    )   ( //",
+      "   (__ __)//",
+      '   " " " "',
     ],
     [
-      "   ⭐ /\\_/\\ ⭐",
-      "   =(  ✦‿✦  )=",
-      " ~~ )  ~  (  ~~",
-      "    (__   __)  ",
-      '    " " " "  ✨',
+      "     /\\_/\\  ⚡",
+      "   =( >w< )=",
+      "    ) ~ ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+  ],
+  adult_reviewer: [
+    [
+      "  🔮 /\\_/\\",
+      "   =( °w° )=",
+      "    )   ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+    [
+      "  🔮 /\\_/\\",
+      "   =( °‿° )=",
+      "    )   ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+    [
+      "  🔮 /\\_/\\",
+      "   =( °w° )=",
+      "    ) ~ ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+  ],
+  adult_explorer: [
+    [
+      "     /\\_/\\  🌿",
+      "   =( °w° )=",
+      "    )   ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+    [
+      "     /\\_/\\  🌿",
+      "   =( °‿° )=",
+      "    )   ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+    [
+      "     /\\_/\\  🌿",
+      "   =( °w° )=",
+      "    ) ~ ( //",
+      "   (__ __)//",
+      '   " " " "',
+    ],
+  ],
+  // Legendary forms vary by archetype
+  legendary_streaker: [
+    [
+      "  🔥⭐ /\\_/\\ ⭐🔥",
+      "    =(  ✦‿✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+    [
+      "  🔥✨ /\\_/\\ ✨🔥",
+      "    =(  ✦w✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ⭐',
+    ],
+    [
+      "  🔥⭐ /\\_/\\ ⭐🔥",
+      "    =(  ✦‿✦  )=",
+      "  ~~ )  ~  (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+  ],
+  legendary_sprinter: [
+    [
+      "  ⚡⭐ /\\_/\\ ⭐⚡",
+      "    =(  ✦‿✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+    [
+      "  ⚡✨ /\\_/\\ ✨⚡",
+      "    =(  ✦w✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ⭐',
+    ],
+    [
+      "  ⚡⭐ /\\_/\\ ⭐⚡",
+      "    =(  ✦‿✦  )=",
+      "  ~~ )  ~  (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+  ],
+  legendary_reviewer: [
+    [
+      "  🔮⭐ /\\_/\\ ⭐🔮",
+      "    =(  ✦‿✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+    [
+      "  🔮✨ /\\_/\\ ✨🔮",
+      "    =(  ✦w✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ⭐',
+    ],
+    [
+      "  🔮⭐ /\\_/\\ ⭐🔮",
+      "    =(  ✦‿✦  )=",
+      "  ~~ )  ~  (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+  ],
+  legendary_explorer: [
+    [
+      "  🌿⭐ /\\_/\\ ⭐🌿",
+      "    =(  ✦‿✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
+    ],
+    [
+      "  🌿✨ /\\_/\\ ✨🌿",
+      "    =(  ✦w✦  )=",
+      "  ~~  )     (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ⭐',
+    ],
+    [
+      "  🌿⭐ /\\_/\\ ⭐🌿",
+      "    =(  ✦‿✦  )=",
+      "  ~~ )  ~  (  ~~",
+      "     (__   __)  ",
+      '     " " " "  ✨',
     ],
   ],
 };
@@ -434,10 +592,21 @@ function centerText(text, width) {
   return " ".repeat(pad) + text;
 }
 
+function getCreatureKey(stats) {
+  const stage = getStage(stats.points);
+  const archetype = getArchetype(stats);
+  // Egg, hatchling, juvenile are universal; adult/legendary vary by archetype
+  if (stage.name === "adult" || stage.name === "legendary") {
+    return `${stage.name}_${archetype}`;
+  }
+  return stage.name;
+}
+
 function render(stats, frameIndex, ambientMsg) {
   const { columns: w, rows: h } = process.stdout;
   const stage = getStage(stats.points);
-  const frames = CREATURES[stage.name];
+  const creatureKey = getCreatureKey(stats);
+  const frames = CREATURES[creatureKey];
   const frame = frames[frameIndex % frames.length];
   const progress = getProgressToNext(stats.points);
 
@@ -455,12 +624,15 @@ function render(stats, frameIndex, ambientMsg) {
   }
   lines.push("");
 
-  // Creature name + stage + mood
+  // Creature name + stage + archetype + mood
   const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+  const archetype = ARCHETYPES[getArchetype(stats)];
   const moodLabel = getMoodLabel(stats);
+  const archetypeTag = (stage.name === "adult" || stage.name === "legendary")
+    ? `  ${DIM}«${archetype.label}»${RESET}` : "";
   lines.push(
     centerText(
-      `${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageName}]${RESET}  ${moodLabel}`,
+      `${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageName}]${RESET}${archetypeTag}  ${moodLabel}`,
       w
     )
   );
