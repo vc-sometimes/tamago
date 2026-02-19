@@ -2,6 +2,9 @@
 
 An idle CLI pet that hatches and grows from your GitHub activity. Like a Tamagotchi in your terminal — always animated, always cozy, no negatives.
 
+<img width="574" height="455" alt="image" src="https://github.com/user-attachments/assets/73474f04-a439-4724-bb0c-639677157a36" />
+
+
 ## Quick Start
 
 ```bash
