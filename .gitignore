@@ -1,0 +1,5 @@
+node_modules
+.env
+gitpet.db
+gitpet.db-shm
+gitpet.db-wal
