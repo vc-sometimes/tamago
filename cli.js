@@ -137,6 +137,75 @@ const CREATURES = {
       "     _|  |_",
     ],
   ],
+  // Evil Cracked — sinister eyes, horns peeking
+  evil_cracked: [
+    [
+      "     v/\\_,v",
+      "     / x x \\",
+      "     |  >  |",
+      "     | \\_/ |",
+      "      `---'",
+    ],
+    [
+      "     v/\\_,v",
+      "     / >_< \\",
+      "     |  >  |",
+      "     | \\_/ |",
+      "      `---'",
+    ],
+    [
+      "     v/\\_,v",
+      "     / x x \\",
+      "     |  <  |",
+      "     | \\_/ |",
+      "      `---'",
+    ],
+  ],
+  // Evil Chick — tiny horns, scowl, bat-wing stubs
+  evil_chick: [
+    [
+      "     v__v",
+      "     (x>",
+      "    ~//\\~",
+      "     V_/_",
+    ],
+    [
+      "     v__v",
+      "     (x>  ~",
+      "    ~//\\~",
+      "     V_/_",
+    ],
+    [
+      "     v__v",
+      "     (>..",
+      "    ~//\\~",
+      "     V_/_",
+    ],
+  ],
+  // Evil Chicken — devil horns, spiky tail, menacing
+  evil_chicken: [
+    [
+      "     v','v",
+      "     (  x>)",
+      "    ~/    \\^~",
+      "    |      |",
+      "     _|  |_",
+    ],
+    [
+      "     v','v  ~",
+      "     (  x>)",
+      "    ~/    \\^~",
+      "    |      |",
+      "     _|  |_",
+    ],
+    [
+      "     v','v",
+      "     (  >x)..",
+      "    ~/    \\^~",
+      "    |      |",
+      "     _|  |_",
+    ],
+  ],
 };
 
 // ── Milestones & Achievements ────────────────────────────────────────────────
@@ -649,7 +718,13 @@ function centerText(text, width) {
 }
 
 function getCreatureKey(stats) {
-  return getStage(stats.points).name;
+  const stage = getStage(stats.points).name;
+  if (stage === "egg") return stage;
+  const fs = globalConfig.funStats;
+  if (fs && fs.totalLinesDeleted > fs.totalLinesAdded) {
+    return "evil_" + stage;
+  }
+  return stage;
 }
 
 function render(stats, frameIndex, ambientMsg) {
@@ -701,12 +776,15 @@ function render(stats, frameIndex, ambientMsg) {
   lines.push("");
 
   // XP bar — minimal
+  const RED = `${ESC}31m`;
+  const isEvil = creatureKey.startsWith("evil_");
   const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+  const stageLabel = isEvil ? `${RED}${stageName} (evil)${RESET}` : `${MUTED}${stageName}${RESET}`;
   const barWidth = Math.min(24, w - 20);
   const xpLabel = stage.max === Infinity
     ? `${SOFT_GOLD}MAX${RESET}`
     : `${MUTED}${stats.points}${FAINT}/${stage.max + 1}${RESET}`;
-  lines.push(`  ${MUTED}${stageName}${RESET}  ${renderProgressBar(progress, barWidth)}  ${xpLabel}`);
+  lines.push(`  ${stageLabel}  ${renderProgressBar(progress, barWidth)}  ${xpLabel}`);
   lines.push("");
 
   // Stats — two clean lines, spaced with soft dots
@@ -818,10 +896,13 @@ function renderBadgesOverlay() {
 function renderEvolutionOverlay() {
   const seen = globalConfig.seenStages || {};
   const FAINT = `${ESC}38;5;239m`;
+  const RED = `${ESC}31m`;
   const lines = [];
 
   const normalPath = ["egg", "cracked", "chick", "chicken"];
+  const evilPath = ["evil_cracked", "evil_chick", "evil_chicken"];
 
+  lines.push(`  ${BOLD}Normal Path${RESET}`);
   lines.push(`  ${FAINT}egg --> cracked --> chick --> chicken${RESET}`);
   lines.push("");
 
@@ -837,7 +918,23 @@ function renderEvolutionOverlay() {
     lines.push("");
   }
 
-  lines.push(`  ${DIM}${Object.keys(seen).length}/4 forms discovered${RESET}`);
+  lines.push(`  ${RED}${BOLD}Evil Path${RESET}  ${FAINT}(delete more lines than you add)${RESET}`);
+  lines.push(`  ${FAINT}evil cracked --> evil chick --> evil chicken${RESET}`);
+  lines.push("");
+
+  for (const key of evilPath) {
+    const label = key.replace("evil_", "Evil ").replace(/^\w/, (c) => c.toUpperCase());
+    if (seen[key]) {
+      lines.push(`  ${RED}${BOLD}${label}${RESET}`);
+      for (const line of CREATURES[key][0]) lines.push(`  ${RED}${line}${RESET}`);
+    } else {
+      lines.push(`  ${FAINT}${label}${RESET}`);
+      lines.push(`  ${FAINT}  ???${RESET}`);
+    }
+    lines.push("");
+  }
+
+  lines.push(`  ${DIM}${Object.keys(seen).length}/7 forms discovered${RESET}`);
   renderOverlay("Evolution Tree", lines);
 }
 
@@ -851,6 +948,7 @@ function renderHelpOverlay() {
     "",
     `  ${DIM}Your pet animates while idle. Stats auto-refresh every 15 min.${RESET}`,
     `  ${DIM}Keep coding to evolve: egg → cracked → chick → chicken${RESET}`,
+    `  ${DIM}Delete more than you add? Your pet goes dark side...${RESET}`,
   ];
   renderOverlay("Help", lines);
 }
@@ -1164,14 +1262,16 @@ function cmdStatus() {
   })();
   const creatureKey = getCreatureKey(stats);
   const art = CREATURES[creatureKey][0].join("\n");
+  const isEvil = creatureKey.startsWith("evil_");
   const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+  const stageLabel = isEvil ? `${stageName} (evil)` : stageName;
   const fs_ = config.funStats || {};
 
   console.log("");
   console.log(art);
   console.log("");
   console.log(`  ${BOLD}${stats.username}'s tamago${RESET}`);
-  console.log(`  Stage: ${stageName}  |  Archetype: ${archetype.label}`);
+  console.log(`  Stage: ${stageLabel}  |  Archetype: ${archetype.label}`);
   console.log(`  Mood: ${moodInfo.label}`);
   console.log(`  Points: ${stats.points} (${progress}% to ${next})`);
   console.log(`  PRs: ${stats.prs}  |  Commits: ${stats.commits}  |  Streak: ${stats.streak}d (${stats.multiplier}x)`);
@@ -1483,10 +1583,12 @@ async function main() {
     const P = "          "; // 10-space indent
     const stage = getStage(stats.points);
     const creatureKey = getCreatureKey(stats);
+    const isEvil = creatureKey.startsWith("evil_");
     const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+    const stageLabel = isEvil ? `${stageName} (evil)` : stageName;
     const frames = CREATURES[creatureKey];
     console.log("");
-    console.log(`${P}${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageName}]${RESET}`);
+    console.log(`${P}${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageLabel}]${RESET}`);
     console.log("");
     for (const line of frames[0]) {
       console.log(`${P}${BRIGHT_YELLOW}${line}${RESET}`);
