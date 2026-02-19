@@ -1118,6 +1118,31 @@ function cmdAchievements() {
   console.log(`\n  ${DIM}${getUnlockedCount(config)}/${MILESTONES.length} unlocked${RESET}\n`);
 }
 
+function checkDailyBonus(config) {
+  const today = new Date().toISOString().split("T")[0];
+  if (!config.dailyBonus) config.dailyBonus = {};
+  if (config.dailyBonus.lastClaim === today) return null;
+
+  // Calculate consecutive daily check-in streak
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  let checkInStreak = 1;
+  if (config.dailyBonus.lastClaim === yesterday) {
+    checkInStreak = (config.dailyBonus.streak || 0) + 1;
+  }
+
+  const bonusPoints = Math.min(10 + checkInStreak * 5, 50); // 15, 20, 25... caps at 50
+  config.dailyBonus.lastClaim = today;
+  config.dailyBonus.streak = checkInStreak;
+  config.dailyBonus.totalClaims = (config.dailyBonus.totalClaims || 0) + 1;
+
+  // Apply bonus to stats
+  if (config.stats) {
+    config.stats.points += bonusPoints;
+  }
+
+  return { bonusPoints, checkInStreak };
+}
+
 function cmdReset() {
   try { fs.unlinkSync(CONFIG_PATH); } catch {}
   console.log("Config reset. Run `node cli.js` to start fresh.");
@@ -1245,6 +1270,13 @@ async function main() {
         process.exit(1);
       }
     }
+  }
+
+  // Daily check-in bonus
+  const bonus = checkDailyBonus(config);
+  if (bonus) {
+    console.log(`\n  ${BRIGHT_YELLOW}🎁 Daily check-in! +${bonus.bonusPoints} pts${RESET}  ${DIM}(${bonus.checkInStreak} day streak)${RESET}`);
+    saveConfig(config);
   }
 
   // Enter raw mode for keypress detection
