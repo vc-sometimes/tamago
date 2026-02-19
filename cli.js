@@ -141,23 +141,79 @@ const CREATURES = {
   ],
 };
 
-const AMBIENT_MESSAGES = [
-  "*munching on commits*",
-  "*dreaming of merges*",
-  "*snoozing peacefully*",
-  "*chasing a bug*",
-  "*reviewing pull requests*",
-  "*basking in green CI checks*",
-  "*playing with git branches*",
-  "*napping on the main branch*",
-  "*humming a happy tune*",
-  "*polishing some code*",
-  "*staring at the stars*",
-  "*stretching after a deploy*",
-  "*doing a little dance*",
-  "*thinking about refactors*",
-  "*counting merged PRs*",
-];
+// ── Mood System ─────────────────────────────────────────────────────────────
+
+const MOODS = {
+  energized: {
+    label: "⚡ Energized",
+    messages: [
+      "*bouncing off the walls*",
+      "*typing furiously*",
+      "*sprinting through the codebase*",
+      "*buzzing with energy*",
+      "*doing rapid-fire commits*",
+    ],
+  },
+  happy: {
+    label: "😊 Happy",
+    messages: [
+      "*humming a happy tune*",
+      "*doing a little dance*",
+      "*basking in green CI checks*",
+      "*smiling at merged PRs*",
+      "*playing with git branches*",
+    ],
+  },
+  cozy: {
+    label: "🛋️  Cozy",
+    messages: [
+      "*snoozing peacefully*",
+      "*napping on the main branch*",
+      "*dreaming of merges*",
+      "*curled up with a good diff*",
+      "*resting between deploys*",
+    ],
+  },
+  focused: {
+    label: "🎯 Focused",
+    messages: [
+      "*deep in code review*",
+      "*polishing some code*",
+      "*thinking about refactors*",
+      "*carefully crafting a commit*",
+      "*studying the architecture*",
+    ],
+  },
+  inspired: {
+    label: "✨ Inspired",
+    messages: [
+      "*staring at the stars*",
+      "*sketching new features*",
+      "*having a eureka moment*",
+      "*dreaming up big ideas*",
+      "*exploring new repos*",
+    ],
+  },
+};
+
+function getMood(stats) {
+  const hoursSinceSync = (Date.now() - stats.fetchedAt) / (1000 * 60 * 60);
+  if (stats.streak >= 7 && stats.prs >= 5) return "energized";
+  if (stats.streak >= 3) return "happy";
+  if (stats.commits >= 30) return "focused";
+  if (stats.prs >= 3) return "inspired";
+  return "cozy";
+}
+
+function getAmbientMessages(stats) {
+  const mood = getMood(stats);
+  return MOODS[mood].messages;
+}
+
+function getMoodLabel(stats) {
+  const mood = getMood(stats);
+  return MOODS[mood].label;
+}
 
 // ── ANSI Helpers ────────────────────────────────────────────────────────────
 
@@ -399,11 +455,12 @@ function render(stats, frameIndex, ambientMsg) {
   }
   lines.push("");
 
-  // Creature name + stage
+  // Creature name + stage + mood
   const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+  const moodLabel = getMoodLabel(stats);
   lines.push(
     centerText(
-      `${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageName}]${RESET}`,
+      `${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageName}]${RESET}  ${moodLabel}`,
       w
     )
   );
@@ -815,8 +872,9 @@ async function main() {
   process.stdout.write(HIDE_CURSOR);
 
   let frameIndex = 0;
-  let messageIndex = Math.floor(Math.random() * AMBIENT_MESSAGES.length);
-  let ambientMsg = AMBIENT_MESSAGES[messageIndex];
+  let moodMessages = getAmbientMessages(stats);
+  let messageIndex = Math.floor(Math.random() * moodMessages.length);
+  let ambientMsg = moodMessages[messageIndex];
   let running = true;
 
   // Handle input
@@ -854,8 +912,9 @@ async function main() {
   // Ambient message rotation
   const msgTimer = setInterval(() => {
     if (!running) return;
-    messageIndex = (messageIndex + 1) % AMBIENT_MESSAGES.length;
-    ambientMsg = AMBIENT_MESSAGES[messageIndex];
+    moodMessages = getAmbientMessages(stats);
+    messageIndex = (messageIndex + 1) % moodMessages.length;
+    ambientMsg = moodMessages[messageIndex];
   }, MESSAGE_INTERVAL);
 
   // Initial render
