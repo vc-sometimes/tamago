@@ -1252,6 +1252,21 @@ let globalConfig = {};
 async function main() {
   // Handle subcommands
   const arg = process.argv[2];
+  if (arg === "--help" || arg === "help" || arg === "-h") {
+    printBanner();
+    console.log(`  ${BOLD}Usage:${RESET} node cli.js [command]\n`);
+    console.log(`  ${BOLD}Commands:${RESET}`);
+    console.log(`    ${BRIGHT_CYAN}(none)${RESET}         Launch interactive pet viewer`);
+    console.log(`    ${BRIGHT_CYAN}status${RESET}         Show pet stats snapshot`);
+    console.log(`    ${BRIGHT_CYAN}pet${RESET}            Give your pet some love`);
+    console.log(`    ${BRIGHT_CYAN}achievements${RESET}   View all milestones`);
+    console.log(`    ${BRIGHT_CYAN}graduate${RESET}       Retire a Legendary pet, start new gen`);
+    console.log(`    ${BRIGHT_CYAN}lineage${RESET}        View history of all graduated pets`);
+    console.log(`    ${BRIGHT_CYAN}reset${RESET}          Clear config and start over`);
+    console.log(`    ${BRIGHT_CYAN}help${RESET}           Show this help message`);
+    console.log("");
+    return;
+  }
   if (arg === "--status" || arg === "status") { cmdStatus(); return; }
   if (arg === "--pet" || arg === "pet") { cmdPet(); return; }
   if (arg === "--achievements" || arg === "achievements") { cmdAchievements(); return; }
