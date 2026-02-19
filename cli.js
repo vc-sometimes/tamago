@@ -299,6 +299,41 @@ const CREATURES = {
   ],
 };
 
+// ── Milestones & Achievements ────────────────────────────────────────────────
+
+const MILESTONES = [
+  { id: "first_commit", check: (s) => s.commits >= 1, title: "First Steps", desc: "Made your first commit" },
+  { id: "ten_commits", check: (s) => s.commits >= 10, title: "Getting Warmed Up", desc: "10 commits in 30 days" },
+  { id: "fifty_commits", check: (s) => s.commits >= 50, title: "On Fire", desc: "50 commits in 30 days" },
+  { id: "hundred_commits", check: (s) => s.commits >= 100, title: "Commit Machine", desc: "100 commits in 30 days" },
+  { id: "first_pr", check: (s) => s.prs >= 1, title: "Merge Day", desc: "First merged PR" },
+  { id: "five_prs", check: (s) => s.prs >= 5, title: "PR Artisan", desc: "5 merged PRs" },
+  { id: "ten_prs", check: (s) => s.prs >= 10, title: "Merge Legend", desc: "10 merged PRs" },
+  { id: "streak_3", check: (s) => s.streak >= 3, title: "Warming Up", desc: "3-day push streak" },
+  { id: "streak_7", check: (s) => s.streak >= 7, title: "On a Roll", desc: "7-day push streak" },
+  { id: "streak_14", check: (s) => s.streak >= 14, title: "Unstoppable", desc: "14-day push streak" },
+  { id: "streak_30", check: (s) => s.streak >= 30, title: "Iron Will", desc: "30-day push streak" },
+  { id: "points_500", check: (s) => s.points >= 500, title: "Rising Star", desc: "Reached 500 points" },
+  { id: "points_1500", check: (s) => s.points >= 1500, title: "Heavy Hitter", desc: "Reached 1500 points" },
+  { id: "points_4000", check: (s) => s.points >= 4000, title: "Legendary Status", desc: "Reached 4000 points" },
+];
+
+function checkMilestones(stats, config) {
+  if (!config.milestones) config.milestones = {};
+  const newMilestones = [];
+  for (const m of MILESTONES) {
+    if (!config.milestones[m.id] && m.check(stats)) {
+      config.milestones[m.id] = Date.now();
+      newMilestones.push(m);
+    }
+  }
+  return newMilestones;
+}
+
+function getUnlockedCount(config) {
+  return Object.keys(config.milestones || {}).length;
+}
+
 // ── Mood System ─────────────────────────────────────────────────────────────
 
 const MOODS = {
@@ -680,6 +715,15 @@ function render(stats, frameIndex, ambientMsg) {
     centerText(`${DIM}last synced: ${syncLabel}${RESET}`, w)
   );
 
+  // Milestones count
+  const unlocked = getUnlockedCount(globalConfig);
+  lines.push(
+    centerText(
+      `${DIM}🏆 ${unlocked}/${MILESTONES.length} achievements${RESET}`,
+      w
+    )
+  );
+
   // Bottom border
   lines.push("");
   lines.push(
@@ -991,8 +1035,11 @@ async function promptToken() {
 
 // ── Main Loop ───────────────────────────────────────────────────────────────
 
+let globalConfig = {};
+
 async function main() {
   let config = loadConfig();
+  globalConfig = config;
 
   // First run: get token
   if (!config.token) {
@@ -1023,7 +1070,11 @@ async function main() {
     try {
       stats = await fetchAllStats(config.token);
       config.stats = stats;
+      const newMilestones = checkMilestones(stats, config);
       saveConfig(config);
+      for (const m of newMilestones) {
+        console.log(`\n  ${BRIGHT_YELLOW}🏆 Achievement unlocked: ${BOLD}${m.title}${RESET}${BRIGHT_YELLOW} — ${m.desc}${RESET}`);
+      }
     } catch (err) {
       if (stats) {
         console.log(
