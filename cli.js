@@ -1035,9 +1035,106 @@ async function promptToken() {
 
 // ── Main Loop ───────────────────────────────────────────────────────────────
 
+// ── CLI Subcommands ─────────────────────────────────────────────────────────
+
+function cmdStatus() {
+  const config = loadConfig();
+  if (!config.stats) {
+    console.log("No stats yet. Run `node cli.js` first to set up your pet.");
+    process.exit(0);
+  }
+  const stats = config.stats;
+  const stage = getStage(stats.points);
+  const archetype = ARCHETYPES[getArchetype(stats)];
+  const mood = getMood(stats);
+  const moodInfo = MOODS[mood];
+  const { progress, next } = (() => {
+    const s = getStage(stats.points);
+    if (s.max === Infinity) return { progress: 100, next: "MAX" };
+    const range = s.max - s.min + 1;
+    return { progress: Math.round(((stats.points - s.min) / range) * 100), next: s.max + 1 };
+  })();
+  const creatureKey = (() => {
+    if (stage.name === "adult" || stage.name === "legendary") return `${stage.name}_${getArchetype(stats)}`;
+    return stage.name;
+  })();
+  const art = CREATURES[creatureKey][0].join("\n");
+  const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+
+  console.log("");
+  console.log(art);
+  console.log("");
+  console.log(`  ${BOLD}${stats.username}'s commitchi${RESET}`);
+  console.log(`  Stage: ${stageName}  |  Archetype: ${archetype.label}`);
+  console.log(`  Mood: ${moodInfo.label}`);
+  console.log(`  Points: ${stats.points} (${progress}% to ${next})`);
+  console.log(`  PRs: ${stats.prs}  |  Commits: ${stats.commits}  |  Streak: ${stats.streak}d (${stats.multiplier}x)`);
+  console.log(`  Achievements: ${getUnlockedCount(config)}/${MILESTONES.length}`);
+  console.log("");
+}
+
+function cmdPet() {
+  const config = loadConfig();
+  if (!config.stats) {
+    console.log("No pet yet! Run `node cli.js` first.");
+    process.exit(0);
+  }
+  if (!config.interactions) config.interactions = {};
+  config.interactions.lastPetted = Date.now();
+  config.interactions.totalPets = (config.interactions.totalPets || 0) + 1;
+  saveConfig(config);
+
+  const reactions = [
+    "*purrs happily*", "*does a little spin*", "*wiggles with joy*",
+    "*nuzzles your hand*", "*chirps excitedly*", "*bounces around*",
+  ];
+  const reaction = reactions[Math.floor(Math.random() * reactions.length)];
+  const stage = getStage(config.stats.points);
+  const creatureKey = (() => {
+    if (stage.name === "adult" || stage.name === "legendary") return `${stage.name}_${getArchetype(config.stats)}`;
+    return stage.name;
+  })();
+  const art = CREATURES[creatureKey][1].join("\n");
+
+  console.log("");
+  console.log(art);
+  console.log("");
+  console.log(`  ${BRIGHT_MAGENTA}${reaction}${RESET}`);
+  console.log(`  ${DIM}Total pets: ${config.interactions.totalPets}${RESET}`);
+  console.log("");
+}
+
+function cmdAchievements() {
+  const config = loadConfig();
+  console.log(`\n  ${BOLD}🏆 Achievements${RESET}\n`);
+  const milestones = config.milestones || {};
+  for (const m of MILESTONES) {
+    const unlocked = milestones[m.id];
+    const icon = unlocked ? `${GREEN}✓${RESET}` : `${DIM}○${RESET}`;
+    const title = unlocked ? `${BOLD}${m.title}${RESET}` : `${DIM}${m.title}${RESET}`;
+    const desc = unlocked ? m.desc : `${DIM}${m.desc}${RESET}`;
+    console.log(`  ${icon} ${title} — ${desc}`);
+  }
+  console.log(`\n  ${DIM}${getUnlockedCount(config)}/${MILESTONES.length} unlocked${RESET}\n`);
+}
+
+function cmdReset() {
+  try { fs.unlinkSync(CONFIG_PATH); } catch {}
+  console.log("Config reset. Run `node cli.js` to start fresh.");
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────
+
 let globalConfig = {};
 
 async function main() {
+  // Handle subcommands
+  const arg = process.argv[2];
+  if (arg === "--status" || arg === "status") { cmdStatus(); return; }
+  if (arg === "--pet" || arg === "pet") { cmdPet(); return; }
+  if (arg === "--achievements" || arg === "achievements") { cmdAchievements(); return; }
+  if (arg === "--reset" || arg === "reset") { cmdReset(); return; }
+
   let config = loadConfig();
   globalConfig = config;
 
