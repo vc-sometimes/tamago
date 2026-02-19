@@ -1123,6 +1123,67 @@ function cmdReset() {
   console.log("Config reset. Run `node cli.js` to start fresh.");
 }
 
+function cmdGraduate() {
+  const config = loadConfig();
+  if (!config.stats) {
+    console.log("No pet yet! Run `node cli.js` first.");
+    process.exit(0);
+  }
+  const stats = config.stats;
+  const stage = getStage(stats.points);
+  if (stage.name !== "legendary") {
+    console.log(`\n  ${YELLOW}Your pet needs to reach Legendary stage to graduate.${RESET}`);
+    console.log(`  ${DIM}Currently: ${stage.name} (${stats.points} pts, need 4000)${RESET}\n`);
+    return;
+  }
+
+  const archetype = getArchetype(stats);
+  const gen = (config.generations || []);
+  const newGen = {
+    number: gen.length + 1,
+    archetype,
+    points: stats.points,
+    prs: stats.prs,
+    commits: stats.commits,
+    streak: stats.streak,
+    graduatedAt: Date.now(),
+    milestones: Object.keys(config.milestones || {}).length,
+  };
+  gen.push(newGen);
+  config.generations = gen;
+
+  // Reset stats but keep token, milestones carry a bonus
+  const inheritBonus = Math.floor(stats.points * 0.1); // 10% inheritance
+  config.stats.points = inheritBonus;
+  config.stats.fetchedAt = 0; // force re-fetch
+  console.log("");
+  console.log(`  ${BOLD}${BRIGHT_CYAN}🎓 Graduation Ceremony!${RESET}`);
+  console.log("");
+  console.log(`  ${BRIGHT_MAGENTA}Your Generation ${newGen.number} ${ARCHETYPES[archetype].label} has graduated!${RESET}`);
+  console.log(`  ${DIM}Final stats: ${stats.points} pts, ${stats.prs} PRs, ${stats.commits} commits, ${stats.streak}d streak${RESET}`);
+  console.log("");
+  console.log(`  ${GREEN}A new egg appears with ${inheritBonus} inherited pts...${RESET}`);
+  console.log(`  ${DIM}Generation ${gen.length + 1} begins!${RESET}`);
+  console.log("");
+  saveConfig(config);
+}
+
+function cmdLineage() {
+  const config = loadConfig();
+  const gens = config.generations || [];
+  if (gens.length === 0) {
+    console.log(`\n  ${DIM}No graduates yet. Reach Legendary stage and run \`node cli.js graduate\`.${RESET}\n`);
+    return;
+  }
+  console.log(`\n  ${BOLD}📜 Lineage${RESET}\n`);
+  for (const g of gens) {
+    const date = new Date(g.graduatedAt).toLocaleDateString();
+    console.log(`  Gen ${g.number}: ${BOLD}${ARCHETYPES[g.archetype]?.label || g.archetype}${RESET} — ${g.points} pts, ${g.milestones} achievements (${date})`);
+  }
+  const current = gens.length + 1;
+  console.log(`\n  ${BRIGHT_CYAN}Current: Generation ${current}${RESET}\n`);
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 let globalConfig = {};
@@ -1134,6 +1195,8 @@ async function main() {
   if (arg === "--pet" || arg === "pet") { cmdPet(); return; }
   if (arg === "--achievements" || arg === "achievements") { cmdAchievements(); return; }
   if (arg === "--reset" || arg === "reset") { cmdReset(); return; }
+  if (arg === "--graduate" || arg === "graduate") { cmdGraduate(); return; }
+  if (arg === "--lineage" || arg === "lineage") { cmdLineage(); return; }
 
   let config = loadConfig();
   globalConfig = config;
