@@ -717,6 +717,13 @@ function centerText(text, width) {
   return "  " + text;
 }
 
+const ART_INDENT = "        "; // 8 spaces from left wall
+
+function trimArt(lines) {
+  const minIndent = Math.min(...lines.map(l => l.match(/^(\s*)/)[1].length));
+  return lines.map(l => ART_INDENT + l.slice(minIndent));
+}
+
 function getCreatureKey(stats) {
   const stage = getStage(stats.points).name;
   if (stage === "egg") return stage;
@@ -761,18 +768,14 @@ function render(stats, frameIndex, ambientMsg) {
   }
   lines.push("");
 
-  // Creature — centered in terminal
-  const maxCreatureLen = Math.max(...frame.map((l) => l.length));
-  const creaturePad = Math.max(2, Math.floor((w - maxCreatureLen) / 2));
-  for (const line of frame) {
-    lines.push(`${" ".repeat(creaturePad)}${WARM_WHITE}${line}${RESET}`);
+  // Creature — indented from left wall
+  for (const line of trimArt(frame)) {
+    lines.push(`${WARM_WHITE}${line}${RESET}`);
   }
   lines.push("");
 
-  // Ambient message — centered, soft, understated
-  const msgLen = ambientMsg.length;
-  const msgPad = Math.max(2, Math.floor((w - msgLen) / 2));
-  lines.push(`${" ".repeat(msgPad)}${FAINT}${ambientMsg}${RESET}`);
+  // Ambient message — left-aligned, soft, understated
+  lines.push(`  ${FAINT}${ambientMsg}${RESET}`);
   lines.push("");
 
   // XP bar — minimal
@@ -910,7 +913,7 @@ function renderEvolutionOverlay() {
     const label = key.charAt(0).toUpperCase() + key.slice(1);
     if (seen[key]) {
       lines.push(`  ${BOLD}${label}${RESET}`);
-      for (const line of CREATURES[key][0]) lines.push(`  ${line}`);
+      for (const line of trimArt(CREATURES[key][0])) lines.push(line);
     } else {
       lines.push(`  ${FAINT}${label}${RESET}`);
       lines.push(`  ${FAINT}  ???${RESET}`);
@@ -926,7 +929,7 @@ function renderEvolutionOverlay() {
     const label = key.replace("evil_", "Evil ").replace(/^\w/, (c) => c.toUpperCase());
     if (seen[key]) {
       lines.push(`  ${RED}${BOLD}${label}${RESET}`);
-      for (const line of CREATURES[key][0]) lines.push(`  ${RED}${line}${RESET}`);
+      for (const line of trimArt(CREATURES[key][0])) lines.push(`${RED}${line}${RESET}`);
     } else {
       lines.push(`  ${FAINT}${label}${RESET}`);
       lines.push(`  ${FAINT}  ???${RESET}`);
@@ -1261,16 +1264,14 @@ function cmdStatus() {
     return { progress: Math.round(((stats.points - s.min) / range) * 100), next: s.max + 1 };
   })();
   const creatureKey = getCreatureKey(stats);
-  const art = CREATURES[creatureKey][0].join("\n");
+  const artLines = trimArt(CREATURES[creatureKey][0]);
   const isEvil = creatureKey.startsWith("evil_");
   const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
   const stageLabel = isEvil ? `${stageName} (evil)` : stageName;
   const fs_ = config.funStats || {};
 
-  console.log("");
-  console.log(art);
-  console.log("");
-  console.log(`  ${BOLD}${stats.username}'s tamago${RESET}`);
+  console.log(`\n  ${BOLD}${stats.username}'s tamago${RESET}\n`);
+  for (const line of artLines) console.log(line);
   console.log(`  Stage: ${stageLabel}  |  Archetype: ${archetype.label}`);
   console.log(`  Mood: ${moodInfo.label}`);
   console.log(`  Points: ${stats.points} (${progress}% to ${next})`);
@@ -1301,12 +1302,10 @@ function cmdPet() {
   const reaction = reactions[Math.floor(Math.random() * reactions.length)];
   globalConfig = config;
   const creatureKey = getCreatureKey(config.stats);
-  const art = CREATURES[creatureKey][1].join("\n");
+  const artLines = trimArt(CREATURES[creatureKey][1]);
 
-  console.log("");
-  console.log(art);
-  console.log("");
-  console.log(`  ${BRIGHT_MAGENTA}${reaction}${RESET}`);
+  console.log(`\n  ${BRIGHT_MAGENTA}${reaction}${RESET}\n`);
+  for (const line of artLines) console.log(line);
   console.log(`  ${DIM}Total pets: ${config.interactions.totalPets}${RESET}`);
   console.log("");
 }
@@ -1580,7 +1579,7 @@ async function main() {
   // Non-interactive mode (piped stdin, no TTY)
   const isTTY = process.stdin.isTTY;
   if (!isTTY) {
-    const P = "          "; // 10-space indent
+    const P = "  "; // 2-space indent
     const stage = getStage(stats.points);
     const creatureKey = getCreatureKey(stats);
     const isEvil = creatureKey.startsWith("evil_");
@@ -1590,8 +1589,8 @@ async function main() {
     console.log("");
     console.log(`${P}${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageLabel}]${RESET}`);
     console.log("");
-    for (const line of frames[0]) {
-      console.log(`${P}${BRIGHT_YELLOW}${line}${RESET}`);
+    for (const line of trimArt(frames[0])) {
+      console.log(`${BRIGHT_YELLOW}${line}${RESET}`);
     }
     const moodMessages = getAmbientMessages(stats);
     const ambientMsg = moodMessages[Math.floor(Math.random() * moodMessages.length)];
