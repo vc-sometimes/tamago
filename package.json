@@ -1,10 +1,10 @@
 {
-  "name": "commitchi",
+  "name": "tamago",
   "version": "2.0.0",
-  "description": "Idle CLI pet that grows from your GitHub activity",
+  "description": "Idle CLI pet that hatches and grows from your GitHub activity",
   "main": "cli.js",
   "bin": {
-    "commitchi": "./cli.js"
+    "tamago": "./cli.js"
   },
   "scripts": {
     "start": "node cli.js"

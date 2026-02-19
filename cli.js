@@ -10,7 +10,7 @@ const { execSync } = require("child_process");
 
 const CONFIG_PATH = path.join(
   process.env.HOME || process.env.USERPROFILE,
-  ".commitchi.json"
+  ".tamago.json"
 );
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 const FRAME_INTERVAL = 800;
@@ -20,144 +20,321 @@ const MESSAGE_INTERVAL = 4000;
 
 const STAGES = [
   { name: "egg", min: 0, max: 99 },
-  { name: "hatchling", min: 100, max: 499 },
-  { name: "juvenile", min: 500, max: 1499 },
-  { name: "adult", min: 1500, max: 3999 },
-  { name: "legendary", min: 4000, max: Infinity },
+  { name: "cracked", min: 100, max: 499 },
+  { name: "chick", min: 500, max: 1999 },
+  { name: "chicken", min: 2000, max: Infinity },
 ];
 
+// ── Archetype System ────────────────────────────────────────────────────────
+// Your coding style determines your pet's archetype, which affects appearance.
+// Archetypes: streaker (consistency), sprinter (volume), reviewer (PRs), explorer (variety)
+
+const ARCHETYPES = {
+  streaker: { label: "Steady Streaker", desc: "Consistent daily coder" },
+  sprinter: { label: "Hyperfocus Hacker", desc: "Intense burst coder" },
+  reviewer: { label: "PR Wizard", desc: "Merge machine" },
+  explorer: { label: "Zen Coder", desc: "Balanced and calm" },
+};
+
+function getArchetype(stats) {
+  if (stats.streak >= 7) return "streaker";
+  if (stats.commits >= 50) return "sprinter";
+  if (stats.prs >= 8) return "reviewer";
+  return "explorer";
+}
+
 const CREATURES = {
+  // Egg — plain, round, still
   egg: [
     [
-      "      .--.",
-      "     /    \\",
-      "    | ~  ~ |",
-      "     \\    /",
-      "      '--'",
+      "       ___",
+      "      /   \\",
+      "     |     |",
+      "     |     |",
+      "      \\___/",
     ],
     [
-      "      .--.",
-      "     /    \\",
-      "    |  ~~  |",
-      "     \\    /",
-      "      '--'",
+      "       ___",
+      "      /   \\",
+      "     |  .  |",
+      "     |     |",
+      "      \\___/",
     ],
     [
-      "      .--.",
-      "     /    \\",
-      "    | ~  ~ |",
-      "     \\  . /",
-      "      '--'",
-    ],
-  ],
-  hatchling: [
-    [
-      "    \\('o')/",
-      "     /   \\",
-      "    / \\ / \\",
-      "      |",
-    ],
-    [
-      "    \\(^o^)/",
-      "     /   \\",
-      "    / \\ / \\",
-      "      |",
-    ],
-    [
-      "    \\('o')/",
-      "      |",
-      "    / \\ / \\",
-      "      |",
+      "       ___",
+      "      /   \\",
+      "     |     |",
+      "     | .   |",
+      "      \\___/",
     ],
   ],
-  juvenile: [
+  // Cracked — eyes peeking through cracks
+  cracked: [
     [
-      "    /\\_/\\",
-      "   ( o.o )",
-      "   > ^ <",
-      "  /|   |\\",
-      "  (_|   |_)",
+      "      ,/\\_,",
+      "     / o o \\",
+      "     |  >  |",
+      "     |     |",
+      "      `---'",
     ],
     [
-      "    /\\_/\\",
-      "   ( -.- )",
-      "   > ^ <",
-      "  /|   |\\",
-      "  (_|   |_)",
+      "      ,/\\_,",
+      "     / -.- \\",
+      "     |  >  |",
+      "     |     |",
+      "      `---'",
     ],
     [
-      "    /\\_/\\",
-      "   ( o.o )",
-      "   > ~ <",
-      "  /|   |\\",
-      "  (_|   |_)",
-    ],
-  ],
-  adult: [
-    [
-      "     /\\_/\\",
-      "   =( °w° )=",
-      "    )   ( //",
-      "   (__ __)//",
-      '   " " " "',
-    ],
-    [
-      "     /\\_/\\",
-      "   =( °‿° )=",
-      "    )   ( //",
-      "   (__ __)//",
-      '   " " " "',
-    ],
-    [
-      "     /\\_/\\",
-      "   =( °w° )=",
-      "    ) ~ ( //",
-      "   (__ __)//",
-      '   " " " "',
+      "      ,/\\_,",
+      "     / o o \\",
+      "     |  <  |",
+      "     |     |",
+      "      `---'",
     ],
   ],
-  legendary: [
+  // Chick — baby chick, fluffy and cute
+  chick: [
     [
-      "   ⭐ /\\_/\\ ⭐",
-      "   =(  ✦‿✦  )=",
-      " ~~  )     (  ~~",
-      "    (__   __)  ",
-      '    " " " "  ✨',
+      "      __",
+      "     (o>",
+      "     //\\",
+      "     V_/_",
     ],
     [
-      "   ✨ /\\_/\\ ✨",
-      "   =(  ✦w✦  )=",
-      " ~~  )     (  ~~",
-      "    (__   __)  ",
-      '    " " " "  ⭐',
+      "      __",
+      "     (o>  ~",
+      "     //\\",
+      "     V_/_",
     ],
     [
-      "   ⭐ /\\_/\\ ⭐",
-      "   =(  ✦‿✦  )=",
-      " ~~ )  ~  (  ~~",
-      "    (__   __)  ",
-      '    " " " "  ✨',
+      "      __",
+      "     (->..",
+      "     //\\",
+      "     V_/_",
+    ],
+  ],
+  // Chicken — full grown, with comb and tail feathers
+  chicken: [
+    [
+      "      ,','",
+      "     (  o>)",
+      "     /    \\~~",
+      "    |      |",
+      "     _|  |_",
+    ],
+    [
+      "      ,','  ~",
+      "     (  o>)",
+      "     /    \\~~",
+      "    |      |",
+      "     _|  |_",
+    ],
+    [
+      "      ,','",
+      "     (  ->)..",
+      "     /    \\~~",
+      "    |      |",
+      "     _|  |_",
+    ],
+  ],
+  // Evil Cracked — sinister eyes, horns peeking
+  evil_cracked: [
+    [
+      "     v/\\_,v",
+      "     / x x \\",
+      "     |  >  |",
+      "     | \\_/ |",
+      "      `---'",
+    ],
+    [
+      "     v/\\_,v",
+      "     / >_< \\",
+      "     |  >  |",
+      "     | \\_/ |",
+      "      `---'",
+    ],
+    [
+      "     v/\\_,v",
+      "     / x x \\",
+      "     |  <  |",
+      "     | \\_/ |",
+      "      `---'",
+    ],
+  ],
+  // Evil Chick — tiny horns, scowl, bat-wing stubs
+  evil_chick: [
+    [
+      "     v__v",
+      "     (x>",
+      "    ~//\\~",
+      "     V_/_",
+    ],
+    [
+      "     v__v",
+      "     (x>  ~",
+      "    ~//\\~",
+      "     V_/_",
+    ],
+    [
+      "     v__v",
+      "     (>..",
+      "    ~//\\~",
+      "     V_/_",
+    ],
+  ],
+  // Evil Chicken — devil horns, spiky tail, menacing
+  evil_chicken: [
+    [
+      "     v','v",
+      "     (  x>)",
+      "    ~/    \\^~",
+      "    |      |",
+      "     _|  |_",
+    ],
+    [
+      "     v','v  ~",
+      "     (  x>)",
+      "    ~/    \\^~",
+      "    |      |",
+      "     _|  |_",
+    ],
+    [
+      "     v','v",
+      "     (  >x)..",
+      "    ~/    \\^~",
+      "    |      |",
+      "     _|  |_",
     ],
   ],
 };
 
-const AMBIENT_MESSAGES = [
-  "*munching on commits*",
-  "*dreaming of merges*",
-  "*snoozing peacefully*",
-  "*chasing a bug*",
-  "*reviewing pull requests*",
-  "*basking in green CI checks*",
-  "*playing with git branches*",
-  "*napping on the main branch*",
-  "*humming a happy tune*",
-  "*polishing some code*",
-  "*staring at the stars*",
-  "*stretching after a deploy*",
-  "*doing a little dance*",
-  "*thinking about refactors*",
-  "*counting merged PRs*",
+// ── Milestones & Achievements ────────────────────────────────────────────────
+
+const MILESTONES = [
+  { id: "first_commit", check: (s) => s.commits >= 1, title: "First Warmth", desc: "First commit warmed the nest", xp: 10 },
+  { id: "ten_commits", check: (s) => s.commits >= 10, title: "Incubating", desc: "10 commits keeping the egg warm", xp: 25 },
+  { id: "fifty_commits", check: (s) => s.commits >= 50, title: "Toasty", desc: "50 commits — shell is glowing", xp: 50 },
+  { id: "hundred_commits", check: (s) => s.commits >= 100, title: "Overheating", desc: "100 commits in 30 days!", xp: 100 },
+  { id: "first_pr", check: (s) => s.prs >= 1, title: "First Crack", desc: "First merged PR cracked the shell", xp: 15 },
+  { id: "five_prs", check: (s) => s.prs >= 5, title: "Shell Breaker", desc: "5 merged PRs", xp: 40 },
+  { id: "ten_prs", check: (s) => s.prs >= 10, title: "Hatch Master", desc: "10 merged PRs", xp: 75 },
+  { id: "streak_3", check: (s) => s.streak >= 3, title: "Warm Streak", desc: "3-day push streak", xp: 20 },
+  { id: "streak_7", check: (s) => s.streak >= 7, title: "Nest Guardian", desc: "7-day push streak", xp: 50 },
+  { id: "streak_14", check: (s) => s.streak >= 14, title: "Eternal Flame", desc: "14-day push streak", xp: 100 },
+  { id: "streak_30", check: (s) => s.streak >= 30, title: "The Incubator", desc: "30-day push streak", xp: 200 },
+  { id: "points_500", check: (s) => s.points >= 500, title: "Cracking Open", desc: "Reached 500 XP", xp: 50 },
+  { id: "points_1500", check: (s) => s.points >= 1500, title: "Little Chick", desc: "Reached 1500 XP", xp: 100 },
+  { id: "points_2000", check: (s) => s.points >= 2000, title: "Full Chicken", desc: "Reached 2000 XP", xp: 150 },
 ];
+
+// ── Per-PR Badges (Bronze / Silver / Gold) ─────────────────────────────────
+
+const BADGES = [
+  // Commit volume per PR
+  { id: "commits_10",  tier: "bronze", icon: "🥉", title: "Steady Hand",     desc: "Merged a PR with 10+ commits",    category: "Commits",   check: (pr) => pr.commits >= 10,  xp: 25 },
+  { id: "commits_50",  tier: "silver", icon: "🥈", title: "Commit Machine",  desc: "Merged a PR with 50+ commits",    category: "Commits",   check: (pr) => pr.commits >= 50,  xp: 75 },
+  { id: "commits_100", tier: "gold",   icon: "🥇", title: "Commit Legend",   desc: "Merged a PR with 100+ commits",   category: "Commits",   check: (pr) => pr.commits >= 100, xp: 150 },
+
+  // Approvers per PR
+  { id: "approvers_3",  tier: "bronze", icon: "🥉", title: "Team Player",     desc: "PR approved by 3+ reviewers",     category: "Reviews",   check: (pr) => pr.approvers >= 3,  xp: 25 },
+  { id: "approvers_5",  tier: "silver", icon: "🥈", title: "Crowd Pleaser",   desc: "PR approved by 5+ reviewers",     category: "Reviews",   check: (pr) => pr.approvers >= 5,  xp: 75 },
+  { id: "approvers_10", tier: "gold",   icon: "🥇", title: "Community Hero",  desc: "PR approved by 10+ reviewers",    category: "Reviews",   check: (pr) => pr.approvers >= 10, xp: 150 },
+
+  // Languages in the repo
+  { id: "langs_3", tier: "bronze", icon: "🥉", title: "Bilingual",       desc: "PR in a repo with 3+ languages",  category: "Languages", check: (pr) => pr.languages >= 3, xp: 25 },
+  { id: "langs_5", tier: "silver", icon: "🥈", title: "Polyglot",        desc: "PR in a repo with 5+ languages",  category: "Languages", check: (pr) => pr.languages >= 5, xp: 75 },
+  { id: "langs_8", tier: "gold",   icon: "🥇", title: "Universal Coder", desc: "PR in a repo with 8+ languages",  category: "Languages", check: (pr) => pr.languages >= 8, xp: 150 },
+];
+
+function checkMilestones(stats, config) {
+  if (!config.milestones) config.milestones = {};
+  const newMilestones = [];
+  for (const m of MILESTONES) {
+    if (!config.milestones[m.id] && m.check(stats)) {
+      config.milestones[m.id] = Date.now();
+      newMilestones.push(m);
+      stats.points += m.xp;
+    }
+  }
+  return newMilestones;
+}
+
+function getUnlockedCount(config) {
+  return Object.keys(config.milestones || {}).length;
+}
+
+// ── Mood System ─────────────────────────────────────────────────────────────
+
+const MOODS = {
+  energized: {
+    label: "Energized",
+    messages: [
+      "*vibrating intensely*",
+      "*shell is literally glowing*",
+      "*wobbling at max speed*",
+      "*crackling with commit energy*",
+      "*spinning in the nest*",
+    ],
+  },
+  happy: {
+    label: "Happy",
+    messages: [
+      "*warm and toasty*",
+      "*doing a little wobble dance*",
+      "*basking in green CI checks*",
+      "*shell is extra shiny today*",
+      "*humming in the nest*",
+    ],
+  },
+  cozy: {
+    label: "Cozy",
+    messages: [
+      "*snug in the nest*",
+      "*napping on the main branch*",
+      "*dreaming of merges*",
+      "*resting between deploys*",
+      "*tucked in nice and warm*",
+    ],
+  },
+  focused: {
+    label: "Focused",
+    messages: [
+      "*shell is furrowed in thought*",
+      "*incubating an idea*",
+      "*quietly absorbing commits*",
+      "*meditating on the codebase*",
+      "*concentrating hard*",
+    ],
+  },
+  inspired: {
+    label: "Inspired",
+    messages: [
+      "*glowing from the inside*",
+      "*shell is sparkling*",
+      "*radiating good vibes*",
+      "*dreaming of evolving*",
+      "*twinkling softly*",
+    ],
+  },
+};
+
+function getMood(stats) {
+  if (stats.streak >= 7 && stats.prs >= 5) return "energized";
+  if (stats.streak >= 3) return "happy";
+  if (stats.commits >= 30) return "focused";
+  if (stats.prs >= 3) return "inspired";
+  return "cozy";
+}
+
+function getAmbientMessages(stats) {
+  const mood = getMood(stats);
+  return MOODS[mood].messages;
+}
+
+function getMoodLabel(stats) {
+  const mood = getMood(stats);
+  return MOODS[mood].label;
+}
 
 // ── ANSI Helpers ────────────────────────────────────────────────────────────
 
@@ -169,11 +346,11 @@ const CYAN = `${ESC}36m`;
 const GREEN = `${ESC}32m`;
 const YELLOW = `${ESC}33m`;
 const MAGENTA = `${ESC}35m`;
-const WHITE = `${ESC}37m`;
-const BRIGHT_CYAN = `${ESC}96m`;
-const BRIGHT_GREEN = `${ESC}92m`;
-const BRIGHT_YELLOW = `${ESC}93m`;
-const BRIGHT_MAGENTA = `${ESC}95m`;
+const WHITE = `${ESC}90m`; // gray — visible on both light and dark
+const BRIGHT_CYAN = `${ESC}36m`;
+const BRIGHT_GREEN = `${ESC}32m`;
+const BRIGHT_YELLOW = `${ESC}38;5;178m`; // dark gold — readable on light bg
+const BRIGHT_MAGENTA = `${ESC}35m`;
 const BG_BLACK = `${ESC}40m`;
 const HIDE_CURSOR = `${ESC}?25l`;
 const SHOW_CURSOR = `${ESC}?25h`;
@@ -210,7 +387,7 @@ function githubRequest(path, token) {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "User-Agent": "commitchi-cli",
+          "User-Agent": "tamago-cli",
           Accept: "application/vnd.github+json",
         },
       },
@@ -293,6 +470,41 @@ async function fetchStreak(token, username) {
   return streak;
 }
 
+async function fetchMergedPRList(token, username) {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  const query = encodeURIComponent(
+    `author:${username} type:pr is:merged merged:>=${since}`
+  );
+  const result = await githubRequest(
+    `/search/issues?q=${query}&per_page=20`,
+    token
+  );
+  return result.items || [];
+}
+
+async function fetchPRDetail(token, owner, repo, number) {
+  return githubRequest(`/repos/${owner}/${repo}/pulls/${number}`, token);
+}
+
+async function fetchPRReviews(token, owner, repo, number) {
+  const reviews = await githubRequest(
+    `/repos/${owner}/${repo}/pulls/${number}/reviews`,
+    token
+  );
+  const approvers = new Set();
+  for (const r of reviews) {
+    if (r.state === "APPROVED") approvers.add(r.user.login);
+  }
+  return approvers.size;
+}
+
+async function fetchRepoLanguages(token, owner, repo) {
+  const langs = await githubRequest(`/repos/${owner}/${repo}/languages`, token);
+  return Object.keys(langs).length;
+}
+
 function getStreakMultiplier(streak) {
   if (streak >= 14) return 3;
   if (streak >= 7) return 2;
@@ -302,6 +514,11 @@ function getStreakMultiplier(streak) {
 
 function calcPoints(prs, commits, streak) {
   return Math.floor((prs * 100 + commits * 10) * getStreakMultiplier(streak));
+}
+
+// Lines deleted are worth 5x lines added — cleanup is underrated
+function calcLineXP(added, deleted) {
+  return Math.floor(added * 0.01 + deleted * 0.05);
 }
 
 async function fetchAllStats(token) {
@@ -324,6 +541,131 @@ async function fetchAllStats(token) {
   };
 }
 
+// ── PR Badge Data ───────────────────────────────────────────────────────────
+
+function parsePRUrl(prItem) {
+  // pull_request.html_url: "https://github.com/owner/repo/pull/42"
+  // or html_url: "https://github.com/owner/repo/pull/42"
+  const url = (prItem.pull_request && prItem.pull_request.html_url) || prItem.html_url || "";
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+  if (!match) return null;
+  return { owner: match[1], repo: match[2], number: parseInt(match[3], 10) };
+}
+
+async function fetchPRBadgeData(token, username) {
+  const prItems = await fetchMergedPRList(token, username);
+  if (prItems.length === 0) return [];
+
+  // Parse owner/repo/number from each PR
+  const parsed = prItems.map(parsePRUrl).filter(Boolean);
+
+  // Dedupe repos for language fetching
+  const uniqueRepos = [...new Set(parsed.map((p) => `${p.owner}/${p.repo}`))];
+  const langCache = {};
+
+  // Fetch languages for each unique repo in parallel
+  const langPromises = uniqueRepos.map(async (key) => {
+    const [owner, repo] = key.split("/");
+    try {
+      langCache[key] = await fetchRepoLanguages(token, owner, repo);
+    } catch {
+      langCache[key] = 0;
+    }
+  });
+
+  // Fetch detail + reviews for each PR in parallel
+  const prPromises = parsed.map(async (pr) => {
+    try {
+      const [detail, approvers] = await Promise.all([
+        fetchPRDetail(token, pr.owner, pr.repo, pr.number),
+        fetchPRReviews(token, pr.owner, pr.repo, pr.number),
+      ]);
+      return {
+        repo: `${pr.owner}/${pr.repo}`,
+        number: pr.number,
+        commits: detail.commits || 0,
+        approvers,
+        additions: detail.additions || 0,
+        deletions: detail.deletions || 0,
+        changed_files: detail.changed_files || 0,
+        created_at: detail.created_at,
+        merged_at: detail.merged_at,
+      };
+    } catch {
+      return null;
+    }
+  });
+
+  await Promise.all([...langPromises, ...prPromises]);
+  const prResults = (await Promise.all(prPromises)).filter(Boolean);
+
+  // Attach language count to each PR
+  for (const pr of prResults) {
+    pr.languages = langCache[pr.repo] || 0;
+  }
+
+  return prResults;
+}
+
+function computeBadges(prDataList, config) {
+  if (!config.badges) config.badges = {};
+  const newBadges = [];
+  for (const pr of prDataList) {
+    for (const badge of BADGES) {
+      if (!config.badges[badge.id] && badge.check(pr)) {
+        config.badges[badge.id] = {
+          unlockedAt: Date.now(),
+          pr: `${pr.repo}#${pr.number}`,
+        };
+        newBadges.push(badge);
+        if (config.stats) config.stats.points += badge.xp;
+      }
+    }
+  }
+  return newBadges;
+}
+
+function computeFunStats(prDataList) {
+  let totalLinesAdded = 0;
+  let totalLinesDeleted = 0;
+  let totalFilesChanged = 0;
+  let biggestPR = null;
+  let fastestMerge = null;
+  const repos = new Set();
+  const languages = new Set();
+
+  for (const pr of prDataList) {
+    totalLinesAdded += pr.additions;
+    totalLinesDeleted += pr.deletions;
+    totalFilesChanged += pr.changed_files;
+    repos.add(pr.repo);
+
+    if (!biggestPR || pr.commits > biggestPR.commits) {
+      biggestPR = { repo: pr.repo, number: pr.number, commits: pr.commits };
+    }
+
+    if (pr.created_at && pr.merged_at) {
+      const hours = (new Date(pr.merged_at) - new Date(pr.created_at)) / 3600000;
+      if (!fastestMerge || hours < fastestMerge.hours) {
+        fastestMerge = { repo: pr.repo, number: pr.number, hours: Math.round(hours * 10) / 10 };
+      }
+    }
+  }
+
+  return {
+    totalLinesAdded,
+    totalLinesDeleted,
+    totalFilesChanged,
+    biggestPR,
+    fastestMerge,
+    reposContributed: repos.size,
+  };
+}
+
+function getBadgeCount(config) {
+  return Object.keys(config.badges || {}).length;
+}
+
 // ── Stage Logic ─────────────────────────────────────────────────────────────
 
 function getStage(points) {
@@ -344,21 +686,23 @@ function getProgressToNext(points) {
 // ── Banner ──────────────────────────────────────────────────────────────────
 
 const BANNER = [
-  " ██████╗ ██████╗ ███╗   ███╗███╗   ███╗██╗████████╗ ██████╗██╗  ██╗██╗",
-  "██╔════╝██╔═══██╗████╗ ████║████╗ ████║██║╚══██╔══╝██╔════╝██║  ██║██║",
-  "██║     ██║   ██║██╔████╔██║██╔████╔██║██║   ██║   ██║     ███████║██║",
-  "██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║██║   ██║   ██║     ██╔══██║██║",
-  "╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║██║   ██║   ╚██████╗██║  ██║██║",
-  " ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝╚═╝",
+  " _________  ________  _____ ______   ________  ________  ________     ",
+  "|\\___   ___\\\\\\   __  \\|\\   _ \\  _   \\|\\   __  \\|\\   ____\\|\\   __  \\    ",
+  "\\|___ \\  \\_\\ \\  \\|\\  \\ \\  \\\\\\__\\ \\  \\ \\  \\|\\  \\ \\  \\___|\\  \\  \\|\\  \\   ",
+  "     \\ \\  \\ \\ \\   __  \\ \\  \\\\|__| \\  \\ \\   __  \\ \\  \\  __\\ \\  \\\\\\  \\  ",
+  "      \\ \\  \\ \\ \\  \\ \\  \\ \\  \\    \\ \\  \\ \\  \\ \\  \\ \\  \\|\\  \\ \\  \\\\\\  \\ ",
+  "       \\ \\__\\ \\ \\__\\ \\__\\ \\__\\    \\ \\__\\ \\__\\ \\__\\ \\_______\\ \\_______\\",
+  "        \\|__|  \\|__|\\|__|\\|__|     \\|__|\\|__|\\|__|\\|_______|\\|_______|",
 ];
 
 const BANNER_COLORS = [
-  `${ESC}38;5;199m`, // hot pink
-  `${ESC}38;5;206m`, // pink
-  `${ESC}38;5;213m`, // light pink
-  `${ESC}38;5;177m`, // lavender
-  `${ESC}38;5;141m`, // purple
-  `${ESC}38;5;135m`, // deep purple
+  `${ESC}38;5;255m`, // bright white
+  `${ESC}38;5;223m`, // warm cream
+  `${ESC}38;5;222m`, // soft gold
+  `${ESC}38;5;216m`, // peach
+  `${ESC}38;5;210m`, // salmon
+  `${ESC}38;5;174m`, // dusty rose
+  `${ESC}38;5;138m`, // warm taupe
 ];
 
 // ── Rendering ───────────────────────────────────────────────────────────────
@@ -366,112 +710,247 @@ const BANNER_COLORS = [
 function renderProgressBar(progress, width) {
   const filled = Math.round(progress * width);
   const empty = width - filled;
-  const bar =
-    `${GREEN}${"█".repeat(filled)}${DIM}${"░".repeat(empty)}${RESET}`;
-  return `[${bar}]`;
+  return `${DIM}${ESC}38;5;240m▕${RESET}${ESC}38;5;222m${"━".repeat(filled)}${ESC}38;5;236m${"─".repeat(empty)}${DIM}${ESC}38;5;240m▏${RESET}`;
 }
 
 function centerText(text, width) {
-  // Strip ANSI for length calculation
-  const stripped = text.replace(/\x1b\[[0-9;]*m/g, "");
-  const pad = Math.max(0, Math.floor((width - stripped.length) / 2));
-  return " ".repeat(pad) + text;
+  return "  " + text;
+}
+
+function getCreatureKey(stats) {
+  const stage = getStage(stats.points).name;
+  if (stage === "egg") return stage;
+  const fs = globalConfig.funStats;
+  if (fs && fs.totalLinesDeleted > fs.totalLinesAdded) {
+    return "evil_" + stage;
+  }
+  return stage;
 }
 
 function render(stats, frameIndex, ambientMsg) {
   const { columns: w, rows: h } = process.stdout;
   const stage = getStage(stats.points);
-  const frames = CREATURES[stage.name];
+  const creatureKey = getCreatureKey(stats);
+  const frames = CREATURES[creatureKey];
   const frame = frames[frameIndex % frames.length];
   const progress = getProgressToNext(stats.points);
 
+  // Muted color palette
+  const MUTED = `${ESC}38;5;245m`;
+  const SOFT_GOLD = `${ESC}38;5;222m`;
+  const SOFT_PINK = `${ESC}38;5;211m`;
+  const SOFT_CYAN = `${ESC}38;5;116m`;
+  const SOFT_GREEN = `${ESC}38;5;150m`;
+  const WARM_WHITE = `${ESC}38;5;252m`;
+  const FAINT = `${ESC}38;5;239m`;
+
   const lines = [];
 
-  // Banner
-  const bannerFits = w >= 76;
+  // Banner — skip if terminal is too short vertically
+  const bannerFits = w >= 74 && h >= 22;
   if (bannerFits) {
     for (let i = 0; i < BANNER.length; i++) {
       const color = BANNER_COLORS[i % BANNER_COLORS.length];
       lines.push(`${BOLD}${color}${BANNER[i]}${RESET}`);
     }
+    lines.push("");
+    const sepWidth = Math.min(44, w - 8);
+    lines.push(`  ${FAINT}${"─".repeat(sepWidth)}${RESET}`);
   } else {
-    lines.push(`${BOLD}${BRIGHT_CYAN}✿ commitchi ✿${RESET}`);
+    lines.push(`${BOLD}${SOFT_GOLD}tamago${RESET}`);
   }
   lines.push("");
 
-  // Creature name + stage
-  const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
-  lines.push(
-    centerText(
-      `${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageName}]${RESET}`,
-      w
-    )
-  );
-  lines.push("");
-
-  // Creature frames
+  // Creature — centered in terminal
+  const maxCreatureLen = Math.max(...frame.map((l) => l.length));
+  const creaturePad = Math.max(2, Math.floor((w - maxCreatureLen) / 2));
   for (const line of frame) {
-    lines.push(centerText(`${BRIGHT_YELLOW}${line}${RESET}`, w));
+    lines.push(`${" ".repeat(creaturePad)}${WARM_WHITE}${line}${RESET}`);
   }
   lines.push("");
 
-  // Ambient message
+  // Ambient message — centered, soft, understated
+  const msgLen = ambientMsg.length;
+  const msgPad = Math.max(2, Math.floor((w - msgLen) / 2));
+  lines.push(`${" ".repeat(msgPad)}${FAINT}${ambientMsg}${RESET}`);
+  lines.push("");
+
+  // XP bar — minimal
+  const RED = `${ESC}31m`;
+  const isEvil = creatureKey.startsWith("evil_");
+  const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+  const stageLabel = isEvil ? `${RED}${stageName} (evil)${RESET}` : `${MUTED}${stageName}${RESET}`;
+  const barWidth = Math.min(24, w - 20);
+  const xpLabel = stage.max === Infinity
+    ? `${SOFT_GOLD}MAX${RESET}`
+    : `${MUTED}${stats.points}${FAINT}/${stage.max + 1}${RESET}`;
+  lines.push(`  ${stageLabel}  ${renderProgressBar(progress, barWidth)}  ${xpLabel}`);
+  lines.push("");
+
+  // Stats — two clean lines, spaced with soft dots
+  const fs_ = globalConfig.funStats || {};
+  const linesAdded = fs_.totalLinesAdded || 0;
+  const linesDeleted = fs_.totalLinesDeleted || 0;
   lines.push(
-    centerText(`${DIM}${MAGENTA}${ambientMsg}${RESET}`, w)
+    `  ${SOFT_GREEN}${stats.points}${MUTED} pts${RESET}  ${FAINT}·${RESET}  ${SOFT_CYAN}${stats.prs}${MUTED} prs${RESET}  ${FAINT}·${RESET}  ${WARM_WHITE}${stats.commits}${MUTED} commits${RESET}  ${FAINT}·${RESET}  ${SOFT_GOLD}${stats.streak}d${MUTED} streak ${FAINT}${stats.multiplier}x${RESET}`
+  );
+  lines.push(
+    `  ${SOFT_GREEN}+${linesAdded}${MUTED} lines${RESET}  ${FAINT}·${RESET}  ${SOFT_PINK}-${linesDeleted}${MUTED} lines${RESET}`
   );
   lines.push("");
 
-  // XP bar
-  const barWidth = Math.min(30, w - 20);
-  const nextStage =
-    stage.max === Infinity
-      ? "MAX"
-      : `${stats.points}/${stage.max + 1} XP`;
-  lines.push(
-    centerText(
-      `${renderProgressBar(progress, barWidth)} ${DIM}${nextStage}${RESET}`,
-      w
-    )
-  );
-  lines.push("");
-
-  // Stats
-  lines.push(
-    centerText(
-      `${BRIGHT_GREEN}${stats.points} pts${RESET}  ${CYAN}${stats.prs} PRs${RESET}  ${WHITE}${stats.commits} commits${RESET}  ${BRIGHT_YELLOW}🔥 ${stats.streak}d streak${RESET}  ${DIM}(${stats.multiplier}x)${RESET}`,
-      w
-    )
-  );
-  lines.push("");
-
-  // Last synced
+  // Footer — synced + key hints, very dim
   const syncedAgo = Math.round((Date.now() - stats.fetchedAt) / 60000);
   const syncLabel = syncedAgo < 1 ? "just now" : `${syncedAgo}m ago`;
+  const unlocked = getUnlockedCount(globalConfig);
+  const badgeCount = getBadgeCount(globalConfig);
   lines.push(
-    centerText(`${DIM}last synced: ${syncLabel}${RESET}`, w)
-  );
-
-  // Bottom border
-  lines.push("");
-  lines.push(
-    centerText(
-      `${DIM}${"─".repeat(Math.min(50, w - 4))}${RESET}`,
-      w
-    )
+    `  ${FAINT}synced ${syncLabel}  ·  ${unlocked}/${MILESTONES.length} achievements  ·  ${badgeCount}/${BADGES.length} badges${RESET}`
   );
   lines.push(
-    centerText(`${DIM}press q to quit${RESET}`, w)
+    `  ${FAINT}[a] achievements  [b] badges  [e] evolution  [h] help  [q] quit${RESET}`
   );
 
-  // Vertically center
-  const totalLines = lines.length;
-  const topPad = Math.max(0, Math.floor((h - totalLines) / 2));
-
-  let output = CLEAR;
-  for (let i = 0; i < topPad; i++) output += "\n";
-  for (const line of lines) output += line + "\n";
+  // Render — cursor home, overwrite in place, clear below
+  let output = `${ESC}H`; // cursor to 1,1
+  output += `${ESC}2K\n`; // blank line at top
+  for (const line of lines) output += `${ESC}2K${line}\n`;
+  output += `${ESC}J`; // clear from cursor to end of screen
 
   process.stdout.write(output);
+}
+
+// ── Overlay Screens (rendered in interactive mode) ──────────────────────────
+
+function renderOverlay(title, bodyLines) {
+  const FAINT = `${ESC}38;5;239m`;
+  let output = `${ESC}H`; // cursor to 1,1
+  output += `${ESC}2K\n`;
+  output += `${ESC}2K  ${BOLD}${title}${RESET}\n`;
+  output += `${ESC}2K\n`;
+  for (const line of bodyLines) {
+    output += `${ESC}2K${line}\n`;
+  }
+  output += `${ESC}2K\n`;
+  output += `${ESC}2K  ${FAINT}press any key to go back${RESET}\n`;
+  output += `${ESC}J`; // clear from cursor to end
+  process.stdout.write(output);
+}
+
+function renderAchievementsOverlay() {
+  const milestones = globalConfig.milestones || {};
+  const lines = [];
+  for (const m of MILESTONES) {
+    const unlocked = milestones[m.id];
+    const icon = unlocked ? `${GREEN}✓${RESET}` : `${DIM}○${RESET}`;
+    const title = unlocked ? `${BOLD}${m.title}${RESET}` : `${DIM}${m.title}${RESET}`;
+    const desc = unlocked ? m.desc : `${DIM}${m.desc}${RESET}`;
+    const xpTag = unlocked ? `  ${DIM}+${m.xp} XP${RESET}` : `  ${DIM}+${m.xp} XP${RESET}`;
+    lines.push(`  ${icon} ${title} — ${desc}${xpTag}`);
+  }
+  lines.push("");
+  lines.push(`  ${DIM}${getUnlockedCount(globalConfig)}/${MILESTONES.length} unlocked${RESET}`);
+  renderOverlay("Achievements", lines);
+}
+
+function renderBadgesOverlay() {
+  const badges = globalConfig.badges || {};
+  const funStats = globalConfig.funStats || {};
+  const lines = [];
+
+  const categories = ["Commits", "Reviews", "Languages"];
+  for (const cat of categories) {
+    lines.push(`  ${BOLD}${cat}${RESET}`);
+    for (const b of BADGES.filter((x) => x.category === cat)) {
+      const unlocked = badges[b.id];
+      if (unlocked) {
+        lines.push(`  ${GREEN}✓${RESET} ${b.icon} ${BOLD}${b.title}${RESET} — ${b.desc}  ${DIM}+${b.xp} XP  (${unlocked.pr})${RESET}`);
+      } else {
+        lines.push(`  ${DIM}○    ${b.title} — ${b.desc}  +${b.xp} XP${RESET}`);
+      }
+    }
+    lines.push("");
+  }
+
+  if (funStats.totalLinesAdded != null) {
+    const addXP = Math.floor(funStats.totalLinesAdded * 0.01);
+    const delXP = Math.floor(funStats.totalLinesDeleted * 0.05);
+    lines.push(`  ${BOLD}Fun Stats${RESET}`);
+    lines.push(`  ${DIM}Lines added:${RESET}    ${BRIGHT_GREEN}+${funStats.totalLinesAdded}${RESET}  ${DIM}(${addXP} XP at 0.01/line)${RESET}`);
+    lines.push(`  ${DIM}Lines deleted:${RESET}  ${BRIGHT_YELLOW}-${funStats.totalLinesDeleted}${RESET}  ${DIM}(${delXP} XP at 0.05/line)${RESET}`);
+    lines.push(`  ${DIM}Files changed:${RESET}  ${funStats.totalFilesChanged}`);
+    lines.push(`  ${DIM}Repos:${RESET}          ${funStats.reposContributed}`);
+    if (funStats.biggestPR) {
+      lines.push(`  ${DIM}Biggest PR:${RESET}     ${funStats.biggestPR.repo}#${funStats.biggestPR.number} (${funStats.biggestPR.commits} commits)`);
+    }
+    if (funStats.fastestMerge) {
+      lines.push(`  ${DIM}Fastest merge:${RESET}  ${funStats.fastestMerge.repo}#${funStats.fastestMerge.number} (${funStats.fastestMerge.hours}h)`);
+    }
+    lines.push("");
+  }
+
+  lines.push(`  ${DIM}${getBadgeCount(globalConfig)}/${BADGES.length} badges unlocked${RESET}`);
+  renderOverlay("Badges", lines);
+}
+
+function renderEvolutionOverlay() {
+  const seen = globalConfig.seenStages || {};
+  const FAINT = `${ESC}38;5;239m`;
+  const RED = `${ESC}31m`;
+  const lines = [];
+
+  const normalPath = ["egg", "cracked", "chick", "chicken"];
+  const evilPath = ["evil_cracked", "evil_chick", "evil_chicken"];
+
+  lines.push(`  ${BOLD}Normal Path${RESET}`);
+  lines.push(`  ${FAINT}egg --> cracked --> chick --> chicken${RESET}`);
+  lines.push("");
+
+  for (const key of normalPath) {
+    const label = key.charAt(0).toUpperCase() + key.slice(1);
+    if (seen[key]) {
+      lines.push(`  ${BOLD}${label}${RESET}`);
+      for (const line of CREATURES[key][0]) lines.push(`  ${line}`);
+    } else {
+      lines.push(`  ${FAINT}${label}${RESET}`);
+      lines.push(`  ${FAINT}  ???${RESET}`);
+    }
+    lines.push("");
+  }
+
+  lines.push(`  ${RED}${BOLD}Evil Path${RESET}  ${FAINT}(delete more lines than you add)${RESET}`);
+  lines.push(`  ${FAINT}evil cracked --> evil chick --> evil chicken${RESET}`);
+  lines.push("");
+
+  for (const key of evilPath) {
+    const label = key.replace("evil_", "Evil ").replace(/^\w/, (c) => c.toUpperCase());
+    if (seen[key]) {
+      lines.push(`  ${RED}${BOLD}${label}${RESET}`);
+      for (const line of CREATURES[key][0]) lines.push(`  ${RED}${line}${RESET}`);
+    } else {
+      lines.push(`  ${FAINT}${label}${RESET}`);
+      lines.push(`  ${FAINT}  ???${RESET}`);
+    }
+    lines.push("");
+  }
+
+  lines.push(`  ${DIM}${Object.keys(seen).length}/7 forms discovered${RESET}`);
+  renderOverlay("Evolution Tree", lines);
+}
+
+function renderHelpOverlay() {
+  const lines = [
+    `  ${BRIGHT_CYAN}a${RESET}  ${DIM}View achievements${RESET}`,
+    `  ${BRIGHT_CYAN}b${RESET}  ${DIM}View per-PR badges & fun stats${RESET}`,
+    `  ${BRIGHT_CYAN}e${RESET}  ${DIM}View evolution tree${RESET}`,
+    `  ${BRIGHT_CYAN}h${RESET}  ${DIM}This help screen${RESET}`,
+    `  ${BRIGHT_CYAN}q${RESET}  ${DIM}Quit${RESET}`,
+    "",
+    `  ${DIM}Your pet animates while idle. Stats auto-refresh every 15 min.${RESET}`,
+    `  ${DIM}Keep coding to evolve: egg → cracked → chick → chicken${RESET}`,
+    `  ${DIM}Delete more than you add? Your pet goes dark side...${RESET}`,
+  ];
+  renderOverlay("Help", lines);
 }
 
 // ── Token Prompt ────────────────────────────────────────────────────────────
@@ -487,7 +966,7 @@ function printBanner() {
 
 // ── Device Flow ─────────────────────────────────────────────────────────────
 
-const GITHUB_CLIENT_ID = "PASTE_YOUR_CLIENT_ID_HERE"; // Replace with your OAuth App client ID
+const GITHUB_CLIENT_ID = "Ov23libvnRqhtMHzfJj8";
 
 function httpsPost(hostname, path, body) {
   return new Promise((resolve, reject) => {
@@ -621,13 +1100,13 @@ function listGhAccounts() {
       timeout: 5000,
       env: { ...process.env, GITHUB_TOKEN: undefined },
     });
-    const accounts = [];
+    const accounts = new Set();
     const regex = /Logged in to github\.com account (\S+)/g;
     let match;
     while ((match = regex.exec(output))) {
-      accounts.push(match[1]);
+      accounts.add(match[1]);
     }
-    return accounts;
+    return [...accounts];
   } catch {}
   return [];
 }
@@ -677,13 +1156,13 @@ function promptText(question) {
 async function promptToken() {
   printBanner();
   console.log(
-    `  ${BRIGHT_MAGENTA}Your GitHub activity feeds an ASCII pet that lives in your terminal.${RESET}`
+    `  ${BRIGHT_MAGENTA}Your GitHub activity incubates an egg that lives in your terminal.${RESET}`
   );
   console.log(
-    `  ${DIM}It grows as you code — commits, PRs, and streaks earn XP.${RESET}`
+    `  ${DIM}Commits, PRs, and streaks warm it up. Watch it evolve.${RESET}`
   );
   console.log(
-    `  ${DIM}No data leaves your machine. No servers. Just vibes.${RESET}`
+    `  ${DIM}No data leaves your machine. No servers. Just eggs.${RESET}`
   );
   console.log("");
   console.log(
@@ -693,10 +1172,10 @@ async function promptToken() {
     `  ${DIM}1. Sign in with GitHub below${RESET}`
   );
   console.log(
-    `  ${DIM}2. Your pet appears — animated and idle in the terminal${RESET}`
+    `  ${DIM}2. Your egg appears — animated and idle in the terminal${RESET}`
   );
   console.log(
-    `  ${DIM}3. Keep coding to level up: egg → hatchling → juvenile → adult → legendary${RESET}`
+    `  ${DIM}3. Keep coding to evolve: egg → cracked → chick → chicken${RESET}`
   );
   console.log(
     `  ${DIM}4. Press ${WHITE}q${DIM} to quit anytime. Stats auto-refresh every 15 min.${RESET}`
@@ -762,8 +1241,257 @@ async function promptToken() {
 
 // ── Main Loop ───────────────────────────────────────────────────────────────
 
+// ── CLI Subcommands ─────────────────────────────────────────────────────────
+
+function cmdStatus() {
+  const config = loadConfig();
+  if (!config.stats) {
+    console.log("No stats yet. Run `node cli.js` first to set up your pet.");
+    process.exit(0);
+  }
+  const stats = config.stats;
+  const stage = getStage(stats.points);
+  const archetype = ARCHETYPES[getArchetype(stats)];
+  const mood = getMood(stats);
+  const moodInfo = MOODS[mood];
+  const { progress, next } = (() => {
+    const s = getStage(stats.points);
+    if (s.max === Infinity) return { progress: 100, next: "MAX" };
+    const range = s.max - s.min + 1;
+    return { progress: Math.round(((stats.points - s.min) / range) * 100), next: s.max + 1 };
+  })();
+  const creatureKey = getCreatureKey(stats);
+  const art = CREATURES[creatureKey][0].join("\n");
+  const isEvil = creatureKey.startsWith("evil_");
+  const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+  const stageLabel = isEvil ? `${stageName} (evil)` : stageName;
+  const fs_ = config.funStats || {};
+
+  console.log("");
+  console.log(art);
+  console.log("");
+  console.log(`  ${BOLD}${stats.username}'s tamago${RESET}`);
+  console.log(`  Stage: ${stageLabel}  |  Archetype: ${archetype.label}`);
+  console.log(`  Mood: ${moodInfo.label}`);
+  console.log(`  Points: ${stats.points} (${progress}% to ${next})`);
+  console.log(`  PRs: ${stats.prs}  |  Commits: ${stats.commits}  |  Streak: ${stats.streak}d (${stats.multiplier}x)`);
+  if (fs_.totalLinesAdded != null) {
+    console.log(`  Lines: ${GREEN}+${fs_.totalLinesAdded}${RESET} / ${YELLOW}-${fs_.totalLinesDeleted}${RESET}`);
+  }
+  console.log(`  Achievements: ${getUnlockedCount(config)}/${MILESTONES.length}`);
+  console.log(`  Badges: ${getBadgeCount(config)}/${BADGES.length}`);
+  console.log("");
+}
+
+function cmdPet() {
+  const config = loadConfig();
+  if (!config.stats) {
+    console.log("No pet yet! Run `node cli.js` first.");
+    process.exit(0);
+  }
+  if (!config.interactions) config.interactions = {};
+  config.interactions.lastPetted = Date.now();
+  config.interactions.totalPets = (config.interactions.totalPets || 0) + 1;
+  saveConfig(config);
+
+  const reactions = [
+    "*purrs happily*", "*does a little spin*", "*wiggles with joy*",
+    "*nuzzles your hand*", "*chirps excitedly*", "*bounces around*",
+  ];
+  const reaction = reactions[Math.floor(Math.random() * reactions.length)];
+  globalConfig = config;
+  const creatureKey = getCreatureKey(config.stats);
+  const art = CREATURES[creatureKey][1].join("\n");
+
+  console.log("");
+  console.log(art);
+  console.log("");
+  console.log(`  ${BRIGHT_MAGENTA}${reaction}${RESET}`);
+  console.log(`  ${DIM}Total pets: ${config.interactions.totalPets}${RESET}`);
+  console.log("");
+}
+
+function cmdAchievements() {
+  const config = loadConfig();
+  console.log(`\n  ${BOLD}Achievements${RESET}\n`);
+  const milestones = config.milestones || {};
+  for (const m of MILESTONES) {
+    const unlocked = milestones[m.id];
+    const icon = unlocked ? `${GREEN}✓${RESET}` : `${DIM}○${RESET}`;
+    const title = unlocked ? `${BOLD}${m.title}${RESET}` : `${DIM}${m.title}${RESET}`;
+    const desc = unlocked ? m.desc : `${DIM}${m.desc}${RESET}`;
+    console.log(`  ${icon} ${title} — ${desc}  ${DIM}+${m.xp} XP${RESET}`);
+  }
+  console.log(`\n  ${DIM}${getUnlockedCount(config)}/${MILESTONES.length} unlocked${RESET}\n`);
+}
+
+function cmdBadges() {
+  const config = loadConfig();
+  const badges = config.badges || {};
+  const funStats = config.funStats || {};
+
+  console.log(`\n  ${BOLD}Badges${RESET}  ${DIM}(per-PR achievements)${RESET}\n`);
+
+  // Group by category
+  const categories = ["Commits", "Reviews", "Languages"];
+  for (const cat of categories) {
+    console.log(`  ${BOLD}${cat}${RESET}`);
+    for (const b of BADGES.filter((b) => b.category === cat)) {
+      const unlocked = badges[b.id];
+      if (unlocked) {
+        console.log(`  ${GREEN}✓${RESET} ${b.icon} ${BOLD}${b.title}${RESET} — ${b.desc}  ${DIM}+${b.xp} XP  (${unlocked.pr})${RESET}`);
+      } else {
+        console.log(`  ${DIM}○    ${b.title} — ${b.desc}  +${b.xp} XP${RESET}`);
+      }
+    }
+    console.log("");
+  }
+
+  // Fun stats
+  if (funStats.totalLinesAdded != null) {
+    const addXP = Math.floor(funStats.totalLinesAdded * 0.01);
+    const delXP = Math.floor(funStats.totalLinesDeleted * 0.05);
+    console.log(`  ${BOLD}Fun Stats${RESET}`);
+    console.log(`  ${DIM}Lines added:${RESET}    ${BRIGHT_GREEN}+${funStats.totalLinesAdded}${RESET}  ${DIM}(${addXP} XP at 0.01/line)${RESET}`);
+    console.log(`  ${DIM}Lines deleted:${RESET}  ${BRIGHT_YELLOW}-${funStats.totalLinesDeleted}${RESET}  ${DIM}(${delXP} XP at 0.05/line)${RESET}`);
+    console.log(`  ${DIM}Files changed:${RESET}  ${funStats.totalFilesChanged}`);
+    console.log(`  ${DIM}Repos:${RESET}          ${funStats.reposContributed}`);
+    if (funStats.biggestPR) {
+      console.log(`  ${DIM}Biggest PR:${RESET}     ${funStats.biggestPR.repo}#${funStats.biggestPR.number} (${funStats.biggestPR.commits} commits)`);
+    }
+    if (funStats.fastestMerge) {
+      console.log(`  ${DIM}Fastest merge:${RESET}  ${funStats.fastestMerge.repo}#${funStats.fastestMerge.number} (${funStats.fastestMerge.hours}h)`);
+    }
+    console.log("");
+  }
+
+  console.log(`  ${DIM}${getBadgeCount(config)}/${BADGES.length} badges unlocked${RESET}\n`);
+}
+
+function checkDailyBonus(config) {
+  const today = new Date().toISOString().split("T")[0];
+  if (!config.dailyBonus) config.dailyBonus = {};
+  if (config.dailyBonus.lastClaim === today) return null;
+
+  // Calculate consecutive daily check-in streak
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  let checkInStreak = 1;
+  if (config.dailyBonus.lastClaim === yesterday) {
+    checkInStreak = (config.dailyBonus.streak || 0) + 1;
+  }
+
+  const bonusPoints = Math.min(10 + checkInStreak * 5, 50); // 15, 20, 25... caps at 50
+  config.dailyBonus.lastClaim = today;
+  config.dailyBonus.streak = checkInStreak;
+  config.dailyBonus.totalClaims = (config.dailyBonus.totalClaims || 0) + 1;
+
+  // Apply bonus to stats
+  if (config.stats) {
+    config.stats.points += bonusPoints;
+  }
+
+  return { bonusPoints, checkInStreak };
+}
+
+function cmdReset() {
+  try { fs.unlinkSync(CONFIG_PATH); } catch {}
+  console.log("Config reset. Run `node cli.js` to start fresh.");
+}
+
+function cmdGraduate() {
+  const config = loadConfig();
+  if (!config.stats) {
+    console.log("No pet yet! Run `node cli.js` first.");
+    process.exit(0);
+  }
+  const stats = config.stats;
+  const stage = getStage(stats.points);
+  if (stage.name !== "chicken") {
+    console.log(`\n  ${YELLOW}Your pet needs to reach Chicken stage to graduate.${RESET}`);
+    console.log(`  ${DIM}Currently: ${stage.name} (${stats.points} pts, need 2000)${RESET}\n`);
+    return;
+  }
+
+  const archetype = getArchetype(stats);
+  const gen = (config.generations || []);
+  const newGen = {
+    number: gen.length + 1,
+    archetype,
+    points: stats.points,
+    prs: stats.prs,
+    commits: stats.commits,
+    streak: stats.streak,
+    graduatedAt: Date.now(),
+    milestones: Object.keys(config.milestones || {}).length,
+  };
+  gen.push(newGen);
+  config.generations = gen;
+
+  // Reset stats but keep token, milestones carry a bonus
+  const inheritBonus = Math.floor(stats.points * 0.1); // 10% inheritance
+  config.stats.points = inheritBonus;
+  config.stats.fetchedAt = 0; // force re-fetch
+  console.log("");
+  console.log(`  ${BOLD}${BRIGHT_CYAN}Graduation Ceremony!${RESET}`);
+  console.log("");
+  console.log(`  ${BRIGHT_MAGENTA}Your Generation ${newGen.number} ${ARCHETYPES[archetype].label} has graduated!${RESET}`);
+  console.log(`  ${DIM}Final stats: ${stats.points} pts, ${stats.prs} PRs, ${stats.commits} commits, ${stats.streak}d streak${RESET}`);
+  console.log("");
+  console.log(`  ${GREEN}A new egg appears with ${inheritBonus} inherited pts...${RESET}`);
+  console.log(`  ${DIM}Generation ${gen.length + 1} begins!${RESET}`);
+  console.log("");
+  saveConfig(config);
+}
+
+function cmdLineage() {
+  const config = loadConfig();
+  const gens = config.generations || [];
+  if (gens.length === 0) {
+    console.log(`\n  ${DIM}No graduates yet. Reach Legendary stage and run \`node cli.js graduate\`.${RESET}\n`);
+    return;
+  }
+  console.log(`\n  ${BOLD}Lineage${RESET}\n`);
+  for (const g of gens) {
+    const date = new Date(g.graduatedAt).toLocaleDateString();
+    console.log(`  Gen ${g.number}: ${BOLD}${ARCHETYPES[g.archetype]?.label || g.archetype}${RESET} — ${g.points} pts, ${g.milestones} achievements (${date})`);
+  }
+  const current = gens.length + 1;
+  console.log(`\n  ${BRIGHT_CYAN}Current: Generation ${current}${RESET}\n`);
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────
+
+let globalConfig = {};
+
 async function main() {
+  // Handle subcommands
+  const arg = process.argv[2];
+  if (arg === "--help" || arg === "help" || arg === "-h") {
+    printBanner();
+    console.log(`  ${BOLD}Usage:${RESET} node cli.js [command]\n`);
+    console.log(`  ${BOLD}Commands:${RESET}`);
+    console.log(`    ${BRIGHT_CYAN}(none)${RESET}         Launch interactive pet viewer`);
+    console.log(`    ${BRIGHT_CYAN}status${RESET}         Show pet stats snapshot`);
+    console.log(`    ${BRIGHT_CYAN}pet${RESET}            Give your pet some love`);
+    console.log(`    ${BRIGHT_CYAN}achievements${RESET}   View all milestones`);
+    console.log(`    ${BRIGHT_CYAN}badges${RESET}         View per-PR badges and fun stats`);
+    console.log(`    ${BRIGHT_CYAN}graduate${RESET}       Retire a Legendary pet, start new gen`);
+    console.log(`    ${BRIGHT_CYAN}lineage${RESET}        View history of all graduated pets`);
+    console.log(`    ${BRIGHT_CYAN}reset${RESET}          Clear config and start over`);
+    console.log(`    ${BRIGHT_CYAN}help${RESET}           Show this help message`);
+    console.log("");
+    return;
+  }
+  if (arg === "--status" || arg === "status") { cmdStatus(); return; }
+  if (arg === "--pet" || arg === "pet") { cmdPet(); return; }
+  if (arg === "--achievements" || arg === "achievements") { cmdAchievements(); return; }
+  if (arg === "--badges" || arg === "badges") { cmdBadges(); return; }
+  if (arg === "--reset" || arg === "reset") { cmdReset(); return; }
+  if (arg === "--graduate" || arg === "graduate") { cmdGraduate(); return; }
+  if (arg === "--lineage" || arg === "lineage") { cmdLineage(); return; }
+
   let config = loadConfig();
+  globalConfig = config;
 
   // First run: get token
   if (!config.token) {
@@ -794,6 +1522,33 @@ async function main() {
     try {
       stats = await fetchAllStats(config.token);
       config.stats = stats;
+      const newMilestones = checkMilestones(stats, config);
+      for (const m of newMilestones) {
+        console.log(`\n  ${BRIGHT_YELLOW}Achievement unlocked: ${BOLD}${m.title}${RESET}${BRIGHT_YELLOW} — ${m.desc}  ${GREEN}+${m.xp} XP${RESET}`);
+      }
+
+      // Fetch PR badge data
+      console.log(`${DIM}Checking PR badges...${RESET}`);
+      try {
+        const prData = await fetchPRBadgeData(config.token, stats.username);
+        const newBadges = computeBadges(prData, config);
+        config.funStats = computeFunStats(prData);
+
+        // Line XP — deletions weighted 5x more than additions
+        const lineXP = calcLineXP(config.funStats.totalLinesAdded, config.funStats.totalLinesDeleted);
+        const prevLineXP = config.prevLineXP || 0;
+        if (lineXP > prevLineXP) {
+          stats.points += lineXP - prevLineXP;
+          config.prevLineXP = lineXP;
+        }
+
+        for (const b of newBadges) {
+          console.log(`\n  ${b.icon} ${BRIGHT_YELLOW}Badge unlocked: ${BOLD}${b.title}${RESET}${BRIGHT_YELLOW} — ${b.desc}  ${GREEN}+${b.xp} XP${RESET}`);
+        }
+      } catch (badgeErr) {
+        // Badge fetching is non-critical; continue without it
+      }
+
       saveConfig(config);
     } catch (err) {
       if (stats) {
@@ -807,6 +1562,54 @@ async function main() {
     }
   }
 
+  // Daily check-in bonus
+  const bonus = checkDailyBonus(config);
+  if (bonus) {
+    console.log(`\n  ${BRIGHT_YELLOW}Daily check-in! +${bonus.bonusPoints} pts${RESET}  ${DIM}(${bonus.checkInStreak} day streak)${RESET}`);
+    saveConfig(config);
+  }
+
+  // Track current form for evolution tree
+  const currentForm = getCreatureKey(stats);
+  if (!config.seenStages) config.seenStages = {};
+  if (!config.seenStages[currentForm]) {
+    config.seenStages[currentForm] = Date.now();
+    saveConfig(config);
+  }
+
+  // Non-interactive mode (piped stdin, no TTY)
+  const isTTY = process.stdin.isTTY;
+  if (!isTTY) {
+    const P = "          "; // 10-space indent
+    const stage = getStage(stats.points);
+    const creatureKey = getCreatureKey(stats);
+    const isEvil = creatureKey.startsWith("evil_");
+    const stageName = stage.name.charAt(0).toUpperCase() + stage.name.slice(1);
+    const stageLabel = isEvil ? `${stageName} (evil)` : stageName;
+    const frames = CREATURES[creatureKey];
+    console.log("");
+    console.log(`${P}${BRIGHT_MAGENTA}~ ${stats.username}'s pet ~${RESET}  ${DIM}[${stageLabel}]${RESET}`);
+    console.log("");
+    for (const line of frames[0]) {
+      console.log(`${P}${BRIGHT_YELLOW}${line}${RESET}`);
+    }
+    const moodMessages = getAmbientMessages(stats);
+    const ambientMsg = moodMessages[Math.floor(Math.random() * moodMessages.length)];
+    console.log("");
+    console.log(`${P}${DIM}${MAGENTA}${ambientMsg}${RESET}`);
+    console.log("");
+    const progress = getProgressToNext(stats.points);
+    const barWidth = 30;
+    console.log(`${P}${renderProgressBar(progress, barWidth)} ${DIM}${stage.max === Infinity ? "MAX" : `${stats.points}/${stage.max + 1} XP`}${RESET}`);
+    console.log("");
+    console.log(`${P}${BRIGHT_GREEN}${stats.points} pts${RESET}  ${CYAN}${stats.prs} PRs${RESET}  ${WHITE}${stats.commits} commits${RESET}  ${BRIGHT_YELLOW}${stats.streak}d streak${RESET}  ${DIM}(${stats.multiplier}x)${RESET}`);
+    const syncedAgo = Math.round((Date.now() - stats.fetchedAt) / 60000);
+    const syncLabel = syncedAgo < 1 ? "just now" : `${syncedAgo}m ago`;
+    console.log(`${P}${DIM}last synced: ${syncLabel}${RESET}`);
+    console.log("");
+    return;
+  }
+
   // Enter raw mode for keypress detection
   process.stdin.setRawMode(true);
   process.stdin.resume();
@@ -815,16 +1618,41 @@ async function main() {
   process.stdout.write(HIDE_CURSOR);
 
   let frameIndex = 0;
-  let messageIndex = Math.floor(Math.random() * AMBIENT_MESSAGES.length);
-  let ambientMsg = AMBIENT_MESSAGES[messageIndex];
+  let moodMessages = getAmbientMessages(stats);
+  let messageIndex = Math.floor(Math.random() * moodMessages.length);
+  let ambientMsg = moodMessages[messageIndex];
   let running = true;
+  let overlay = null; // null = pet view, "achievements" | "badges" | "help"
 
   // Handle input
   process.stdin.on("data", (key) => {
-    if (key === "q" || key === "\x03") {
-      // q or Ctrl+C
+    if (key === "\x03") {
+      // Ctrl+C always quits
       running = false;
       cleanup();
+      return;
+    }
+    if (overlay) {
+      // Any key exits overlay back to pet view
+      overlay = null;
+      render(stats, frameIndex, ambientMsg);
+      return;
+    }
+    if (key === "q") {
+      running = false;
+      cleanup();
+    } else if (key === "a") {
+      overlay = "achievements";
+      renderAchievementsOverlay();
+    } else if (key === "b") {
+      overlay = "badges";
+      renderBadgesOverlay();
+    } else if (key === "e") {
+      overlay = "evolution";
+      renderEvolutionOverlay();
+    } else if (key === "h" || key === "?") {
+      overlay = "help";
+      renderHelpOverlay();
     }
   });
 
@@ -833,7 +1661,7 @@ async function main() {
     process.stdout.write(CLEAR);
     const stage = getStage(stats.points);
     console.log(
-      `\n${BRIGHT_CYAN}✿ ${stats.username}'s ${stage.name} waves goodbye! ✿${RESET}\n`
+      `\n${BRIGHT_CYAN}${stats.username}'s ${stage.name} egg wobbles goodbye!${RESET}\n`
     );
     console.log(`${DIM}${stats.points} pts | ${stats.streak}d streak | See you next commit!${RESET}\n`);
     process.exit(0);
@@ -841,12 +1669,17 @@ async function main() {
 
   // Handle terminal resize
   process.stdout.on("resize", () => {
-    if (running) render(stats, frameIndex, ambientMsg);
+    if (!running) return;
+    if (overlay === "achievements") renderAchievementsOverlay();
+    else if (overlay === "badges") renderBadgesOverlay();
+    else if (overlay === "evolution") renderEvolutionOverlay();
+    else if (overlay === "help") renderHelpOverlay();
+    else render(stats, frameIndex, ambientMsg);
   });
 
   // Animation loop
   const animTimer = setInterval(() => {
-    if (!running) return;
+    if (!running || overlay) return;
     frameIndex = (frameIndex + 1) % 3;
     render(stats, frameIndex, ambientMsg);
   }, FRAME_INTERVAL);
@@ -854,8 +1687,9 @@ async function main() {
   // Ambient message rotation
   const msgTimer = setInterval(() => {
     if (!running) return;
-    messageIndex = (messageIndex + 1) % AMBIENT_MESSAGES.length;
-    ambientMsg = AMBIENT_MESSAGES[messageIndex];
+    moodMessages = getAmbientMessages(stats);
+    messageIndex = (messageIndex + 1) % moodMessages.length;
+    ambientMsg = moodMessages[messageIndex];
   }, MESSAGE_INTERVAL);
 
   // Initial render
