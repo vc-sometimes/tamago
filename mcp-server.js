@@ -14,10 +14,10 @@ const CONFIG_PATH = path.join(
 // ── Game Data (synced with cli.js) ──────────────────────────────────────────
 
 const STAGES = [
-  { name: "egg", min: 0, max: 99 },
-  { name: "cracked", min: 100, max: 499 },
-  { name: "chick", min: 500, max: 1999 },
-  { name: "chicken", min: 2000, max: Infinity },
+  { name: "egg", min: 0, max: 999 },
+  { name: "cracked", min: 1000, max: 4999 },
+  { name: "chick", min: 5000, max: 19999 },
+  { name: "chicken", min: 20000, max: Infinity },
 ];
 
 const CREATURES = {
@@ -89,9 +89,9 @@ const MILESTONES = [
   { id: "streak_7", check: (s) => s.streak >= 7, title: "Nest Guardian", desc: "7-day push streak" },
   { id: "streak_14", check: (s) => s.streak >= 14, title: "Eternal Flame", desc: "14-day push streak" },
   { id: "streak_30", check: (s) => s.streak >= 30, title: "The Incubator", desc: "30-day push streak" },
-  { id: "points_500", check: (s) => s.points >= 500, title: "Cracking Open", desc: "Reached 500 XP" },
-  { id: "points_1500", check: (s) => s.points >= 1500, title: "Little Chick", desc: "Reached 1500 XP" },
-  { id: "points_2000", check: (s) => s.points >= 2000, title: "Full Chicken", desc: "Reached 2000 XP" },
+  { id: "points_500", check: (s) => s.points >= 5000, title: "Cracking Open", desc: "Reached 5000 XP" },
+  { id: "points_1500", check: (s) => s.points >= 15000, title: "Little Chick", desc: "Reached 15000 XP" },
+  { id: "points_2000", check: (s) => s.points >= 20000, title: "Full Chicken", desc: "Reached 20000 XP" },
 ];
 
 const REACTIONS = [
